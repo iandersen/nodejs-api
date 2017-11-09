@@ -1,0 +1,31 @@
+{
+  "name": "nodejs-api",
+  "version": "1.0.0",
+  "description": "For evaluation",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --config webpack.config.js",
+    "babel": "babel --presets env src/main.js -o build/main.bundle.js",
+    "webpack": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guadalcanal/nodejs-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/guadalcanal/nodejs-api/issues"
+  },
+  "homepage": "https://github.com/guadalcanal/nodejs-api#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.1",
+    "http": "0.0.0",
+    "webpack": "^3.8.1"
+  }
+}
