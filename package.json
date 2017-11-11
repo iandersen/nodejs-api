@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --config webpack.config.js",
     "babel": "babel --presets env src/main.js -o build/main.bundle.js",
-    "webpack": "webpack"
+    "webpack": "webpack -w",
+    "start": "webpack && node build/main.bundle.js"
   },
   "repository": {
     "type": "git",
@@ -20,7 +21,9 @@
     "url": "https://github.com/guadalcanal/nodejs-api/issues"
   },
   "homepage": "https://github.com/guadalcanal/nodejs-api#readme",
-  "dependencies": {},
+  "dependencies": {
+    "basicauth-middleware": "^3.0.0"
+  },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-loader": "^7.1.2",
