@@ -1,5 +1,5 @@
 # nodejs-api
-For evaluation
+*For evaluation*
 
 I spent around 6 hours on this program, 3 or so of which were initial setup.
 
@@ -15,7 +15,7 @@ Clone the repository, then type `npm run start`
     curl -u myName:12345 -X POST -d title=Book -d author=Author localhost:8080/api/books
 ### READ:
 #### All books:
-    curl localhost:8080/api/books/1
+    curl localhost:8080/api/books
 #### Specific book:
     curl localhost:8080/api/books/1
 ### UPDATE:
