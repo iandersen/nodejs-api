@@ -1,17 +1,23 @@
-const express = require('express');
-const app = express();
+const app = require('express')();
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 const basicauth = require('basicauth-middleware');
+const path = require('path');
 
-import BookController from './controller/bookController';
+app.get('/', function(req, res){
+    res.sendFile(path.resolve('./views/index.html'));
+});
 
-//These routes are unprotected
-app.get('/api/books/*', (req, res) => res.send(BookController.get(req, res)));
-app.get('/api/books', (req, res) => res.send(BookController.index(req, res)));
+app.get('/client', function(req, res){
+    res.sendFile(path.resolve('./build/client.bundle.js'));
+});
 
-app.use(basicauth('myName', '12345'));
-//These routes are protected with the password "12345" and the username "myName");
-app.post('/api/books', (req, res) => res.send(BookController.create(req, res)));
-app.patch('/api/books/*', (req, res) => res.send(BookController.update(req, res)));
-app.delete('/api/books/*', (req, res) => res.send(BookController.delete(req, res)));
+io.on('connection', function(socket){
+    console.log('a user connected');
 
-app.listen(8080, () => console.log('Listening on port 8080'));
+    socket.on('disconnect', function(){
+        console.log('user disconnected');
+    });
+});
+
+http.listen(8080, () => console.log('Listening on port 8080'));

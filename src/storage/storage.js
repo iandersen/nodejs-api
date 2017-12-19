@@ -6,7 +6,7 @@
 
 import books from './books.json';
 
-let instance = null
+let instance = null;
 
 class Storage{
 	constructor(){
