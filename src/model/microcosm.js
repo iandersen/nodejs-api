@@ -1,7 +1,7 @@
 /**
  * Created by Ian on 12/19/2017.
  */
-import Stick from './stick';
+const Stick = require('./stick');
 
 class Microcosm {
     constructor(name) {
@@ -16,4 +16,4 @@ class Microcosm {
     }
 }
 
-export default Microcosm;
+module.exports = Microcosm;

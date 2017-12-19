@@ -2,7 +2,7 @@
  * Created by Ian on 12/19/2017.
  */
 
-class Rom {
+class Room {
     constructor(name) {
         this.width = 10000;
         this.height = 10000;
@@ -17,4 +17,4 @@ class Rom {
     }
 }
 
-export default Rom;
+module.exports = Room;

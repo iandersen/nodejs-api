@@ -1,9 +1,9 @@
 const url = require('url');
 const queryString = require('query-string');
 
-import Storage from '../storage/storage';
-import Helper from './helper';
-import Book from '../model/book';
+const Storage = require('../storage/storage');
+const Helper = require('./helper');
+const Book = require('../model/book');
 
 const storage = new Storage();
 
@@ -60,4 +60,4 @@ class BookController{
 	}
 }
 
-export default BookController;
+module.exports = BookController;

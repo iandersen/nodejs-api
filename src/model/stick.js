@@ -22,4 +22,4 @@ class Stick {
     }
 }
 
-export default Stick;
+module.exports = Stick;
