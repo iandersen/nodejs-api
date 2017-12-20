@@ -5,6 +5,8 @@ const Storage = require('../storage/storage');
 const Stick = require('./stick');
 const Room = require('./room');
 
+const speed = 1;
+
 class Microcosm {
     constructor(id) {
         this.id = id;
@@ -25,6 +27,33 @@ class Microcosm {
         allSticks.map((s) => {
            s.destroy();
         });
+    }
+
+    moveTowards(cx, cy, x, y){
+        let myX = this.row.x;
+        let myY = this.row.y;
+        let myDirection = this.row.direction;
+        let angle = this.angle(cx, cy, x, y);
+        let diff = angle - myDirection;
+        if(Math.abs(diff) > Math.PI / 30)
+            diff = Math.sign(diff) * Math.PI / 30;
+        myDirection += diff;
+        myY -= Math.sin(myDirection) * speed;
+        myX += Math.cos(myDirection) * speed;
+        myX = Math.max(0, Math.min(myX, Room.getWidth()));
+        myY = Math.max(0, Math.min(myY, Room.getHeight()));
+        this.row.x = myX;
+        this.row.y = myY;
+        this.row.direction = myDirection;
+        Storage.update('microcosm', this.id, {direction: myDirection, x: myX, y: myY});
+    }
+
+    angle(cx, cy, ex, ey) {
+        let dy = ey - cy;
+        let dx = ex - cx;
+        let theta = Math.atan2(dy, dx); // range (-PI, PI]
+        //theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
+        return theta;
     }
 }
 

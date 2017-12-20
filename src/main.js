@@ -21,6 +21,21 @@ app.get('/client', function(req, res){
 
 io.on('connection', function(socket){
     logIn(socket);
+    socket.on('mouse', function(pos){
+        let x = pos.x;
+        let y = pos.y;
+        let width = pos.w;
+        let height = pos.h;
+        let conn = getConnection(socket);
+        if(conn) {
+            let player = conn.player;
+            let microcosm = player.microcosm;
+            if (microcosm) {
+                microcosm.moveTowards(width / 2, height / 2, x, y);
+            } else
+                console.log('No microcosm');
+        }
+    });
     socket.on('disconnect', function(){
         logOut(socket);
     });
@@ -43,6 +58,15 @@ function logIn(socket){
             });
         });
     });
+}
+
+function getConnection(socket){
+    const userConnection = connections.filter((u, i) => {
+        if(u.socket.id === socket.id)
+            id = i;
+        return id === i;
+    });
+    return userConnection ? userConnection[0] : -1;
 }
 
 function logOut(socket){

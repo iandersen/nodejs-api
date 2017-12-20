@@ -12,6 +12,13 @@ class Room {
     static randomY(){
         return Math.round(Math.random() * height);
     }
+
+    static getWidth(){
+        return width;
+    }
+    static getHeight(){
+        return height;
+    }
 }
 
 module.exports = Room;

@@ -32,6 +32,29 @@ class Storage{
         }
     }
 
+    static update(modelName, id, props){
+        Storage.connect();
+        const cols = Object.keys(props);
+        const vals = Object.values(props);
+        let setString = '';
+        for(let i = 0; i < cols.length; i++){
+            setString += `\`${cols[i]}\``;
+            setString += ' = ?';
+            if(i < cols.length - 1) {
+                setString += ',';
+            }
+        }
+        const query = `UPDATE ${tables[modelName]} set ${setString} where id = ${id}`;
+        con.query(query, vals, function(err, results) {
+            if(err){
+                console.error(err);
+                console.log(query);
+                console.log(modelName);
+            }
+        });
+        return 0;
+    }
+
     static find(modelName, id, callback){
         Storage.connect();
         con.query(`SELECT * FROM ${tables[modelName]} where id = ?`, [id], function(err, results) {

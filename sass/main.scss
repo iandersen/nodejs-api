@@ -1,0 +1,28 @@
+body{
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+#gameTitle{
+  position: absolute;
+  top: 100px;
+  text-align: center;
+  margin-left: 50%;
+  transform: translateX(-50%);
+  font-size: 80px;
+}
+
+#startBox{
+  position: absolute;
+  text-align: center;
+  margin-left: 50%;
+  transform: translateX(-50%), translateY(-50%);
+  margin-top: 300px;
+  font-size: 80px;
+}
+
+#gameCanvas{
+  width: 100%;
+  height: 100%;
+}
