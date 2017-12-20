@@ -4,8 +4,9 @@
 const Storage = require('../storage/storage');
 const Stick = require('./stick');
 const Room = require('./room');
+const Renderable = require('../../rendering/Renderable');
 
-const speed = 1;
+const speed = 5;
 
 class Microcosm {
     constructor(id) {
@@ -17,8 +18,31 @@ class Microcosm {
         }.bind(this));
     }
 
-    sticks(test){
+    getX(){
+        if(this.row)
+            return this.row.x;
+        return -1;
+    }
+
+    getY(){
+        if(this.row)
+            return this.row.y;
+        return -1;
+    }
+
+    sticks(){
         return this.stick.getChildren();
+    }
+
+    renderSticks(arr){
+        if(this.stick) {
+            arr.push(new Renderable(this.row.x, this.row.y, this.row.direction, this.row.type));
+        }
+    }
+
+    static randomType(){
+        const types = ['pop1','pop2','pop3','pop4','pop5','pop6'];
+        return types[Math.floor(Math.random() * types.length)];
     }
 
     destroy(){
@@ -30,15 +54,22 @@ class Microcosm {
     }
 
     moveTowards(cx, cy, x, y){
+        if(!this.row)
+            return;
         let myX = this.row.x;
         let myY = this.row.y;
         let myDirection = this.row.direction;
         let angle = this.angle(cx, cy, x, y);
         let diff = angle - myDirection;
+        if(diff > Math.PI)
+            diff = Math.PI - diff;
+        if(diff < -Math.PI)
+            diff = 2 * Math.PI + diff;
         if(Math.abs(diff) > Math.PI / 30)
             diff = Math.sign(diff) * Math.PI / 30;
+        if(Math.abs(diff) >= Math.PI / 60)
         myDirection += diff;
-        myY -= Math.sin(myDirection) * speed;
+        myY += Math.sin(myDirection) * speed;
         myX += Math.cos(myDirection) * speed;
         myX = Math.max(0, Math.min(myX, Room.getWidth()));
         myY = Math.max(0, Math.min(myY, Room.getHeight()));

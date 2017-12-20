@@ -8,6 +8,10 @@ class Player {
     constructor(id){
         this.id = id;
         this.microcosm = null;
+        this.centerX = -1;
+        this.centerY = -1;
+        this.mouseX = -1;
+        this.mouseY = -1;
         Storage.find('player', this.id, function(row){
             this.row = row[0];
             const mID = row[0].microcosm_id;

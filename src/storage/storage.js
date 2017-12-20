@@ -10,7 +10,8 @@ const tables = {
     'microcosm': 'microcosms',
     'room': 'rooms',
     'stick': 'sticks',
-    'player': 'players'
+    'player': 'players',
+    'splinter': 'splinters'
 };
 let con = null;
 
@@ -30,6 +31,17 @@ class Storage{
                 console.log("Connected to Database!");
             });
         }
+    }
+
+    static deleteAll(modelName){
+        Storage.connect();
+        con.query(`DELETE FROM ${tables[modelName]}`, [], function(err, results) {
+            if(err){
+                console.error(err);
+                console.log(query);
+                console.log(modelName);
+            }
+        });
     }
 
     static update(modelName, id, props){
