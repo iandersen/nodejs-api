@@ -1,19 +1,16 @@
 /**
  * Created by Ian on 12/19/2017.
  */
-
+const width = 10000;
+const height = 10000;
 class Room {
-    constructor(name) {
-        this.width = 10000;
-        this.height = 10000;
-    }
 
     static randomX(){
-        return Math.random() * this.width;
+        return Math.round(Math.random() * width);
     }
 
     static randomY(){
-        return Math.random() * this.height;
+        return Math.round(Math.random() * height);
     }
 }
 
