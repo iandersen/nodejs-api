@@ -5,7 +5,7 @@ require('../sass/main.scss');
 const types = require('../rendering/types');
 let images = {};
 
-let socket, mouseX, mouseY, lastMouseX, lastMouseY, x, y, renderables;
+let socket, mouseX, mouseY, lastMouseX, lastMouseY, x, y, renderables, splinters, sticks, scoreBoard;
 let canvas = document.getElementById('gameCanvas');
 
 $('#startButton').click(function(){
@@ -14,6 +14,13 @@ $('#startButton').click(function(){
     socket.on('position', (pos) => {
         x = pos.x;
         y = pos.y;
+    });
+    socket.on('properties', (props) => {
+        splinters = props.splinters;
+        sticks = props.sticks;
+    });
+    socket.on('scores', (scores) => {
+        scoreBoard = scores;
     });
 
     socket.on('renderables', (r)=>{
@@ -26,6 +33,7 @@ $('#startButton').click(function(){
 
 function main(){
     draw();
+    drawGUI();
     if(true || mouseX !== lastMouseX || mouseY !== lastMouseY) {
         lastMouseX = mouseX;
         lastMouseY = mouseY;
@@ -82,4 +90,10 @@ function draw(){
                 drawRotated(xx - s / 2,yy - s / 2,img,r.radians, img.width, img.height);
             }
         });
+}
+
+function drawGUI(){
+    const context = canvas.getContext('2d');
+    const h = canvas.height;
+    const w = canvas.width;
 }

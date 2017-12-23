@@ -91,15 +91,17 @@ class Microcosm {
         let myY = this.y;
         let myDirection = this.direction;
         let angle = this.angle(cx, cy, x, y);
+        if(myDirection < -Math.PI)
+            myDirection = 2 * Math.PI + myDirection;
         let diff = angle - myDirection;
         if(diff > Math.PI)
             diff = Math.PI - diff;
         if(diff < -Math.PI)
             diff = 2 * Math.PI + diff;
-        if(Math.abs(diff) > Math.PI / 30) {
-            diff = Math.sign(diff) * Math.PI / 30;
-            myDirection += diff;
-        }else
+        diff = Math.round(diff * 100) / 100;
+        if(Math.abs(diff) > Math.PI / 30)
+            myDirection += Math.sign(diff) * Math.PI / 30;
+        else
             myDirection = angle;
         myY += Math.sin(myDirection) * speed;
         myX += Math.cos(myDirection) * speed;
