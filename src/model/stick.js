@@ -3,46 +3,91 @@
  */
 
 const Storage = require('../storage/storage');
+const Line = require('../util/line');
+const Point = require('../util/point');
+const ColBox = require('../util/colBox');
+const Game = require('../gameState');
+const game = new Game();
 
 class Stick {
-    constructor(id, parent, gender){
-        this.id = id;
+    constructor(parent){
         this.parent = parent;
-        this.gender = gender;
         this.length = Stick.getLength();
-        Storage.find('stick', this.id, function(row){
-            this.daughter = null;
-            this.row = row[0];
-            if(this.row.son_id)
-                this.son = new Stick(this.row.son_id, this.id, 'male');
-            if(this.row.daughter_id)
-                this.daughter = new Stick(this.row.daughter_id, this.id, 'female');
-        }.bind(this));
+        this.x = 0;
+        this.y = 0;
+        this.rotation = 0;
+        this.daughter = null;
+        this.son = null;
     }
 
     static getLength(){
         return 464;
     }
 
+    static getWidth(){
+        return 38;
+    }
+
     static getTipSize(){
         return 20;
     }
 
-    collidedSplinters(splinters){
+    collidedSplinters(){
+        const colBox = this.getColBox();
         let ret = [];
-
+        if(!colBox)
+            return ret;
+        game.splinters.forEach((s, i)=>{
+            if(Math.abs(s.x - this.x) < Stick.getLength() && Math.abs(s.y - this.y) < Stick.getLength()) {
+                if (colBox.isCollided(s.colBox)) {
+                    game.splinters.splice(i,1);
+                    ret.push(s);
+                }
+            }
+        });
         return ret;
     }
 
-    updateChildren(){
-        Storage.find('stick', this.id, function(row){
-            this.daughter = null;
-            this.row = row[0];
-            if(this.row.son_id)
-                this.son = new Stick(this.row.son_id, this.id, 'male');
-            if(this.row.daughter_id)
-                this.daughter = new Stick(this.row.daughter_id, this.id, 'female');
-        }.bind(this));
+    updatePosition(x,y,dir){
+        this.x = x;
+        this.y = y;
+        this.rotation = dir;
+        this.frontX = x + this.lengthDirX(Stick.getLength() / 2, dir);
+        this.frontY = y + this.lengthDirY(Stick.getLength() / 2, dir);
+        this.backX = x + this.lengthDirX(Stick.getLength() / 2, dir - Math.PI);
+        this.backY = y + this.lengthDirY(Stick.getLength() / 2, dir - Math.PI);
+        this.getColBox();
+    }
+
+    getColBox(){
+        let tLX, tLY, tRX, tRY, bLX, bLY, bRX, bRY;
+        const w = Stick.getWidth();
+        tLX=this.frontX+this.lengthDirX(w/2,this.rotation+Math.PI/2);
+        tLY=this.frontY+this.lengthDirY(w/2,this.rotation+Math.PI/2);
+
+        tRX=this.frontX+this.lengthDirX(w/2,this.rotation-Math.PI/2);
+        tRY=this.frontY+this.lengthDirY(w/2,this.rotation-Math.PI/2);
+
+        bLX=this.backX+this.lengthDirX(w/2,this.rotation+Math.PI/2);
+        bLY=this.backY+this.lengthDirY(w/2,this.rotation+Math.PI/2);
+
+        bRX=this.backX+this.lengthDirX(w/2,this.rotation-Math.PI/2);
+        bRY=this.backY+this.lengthDirY(w/2,this.rotation-Math.PI/2);
+        let l1, l2, l3, l4;
+        l1 = new Line(new Point(tLX, tLY), new Point(tRX, tRY));
+        l2 = new Line(new Point(tRX, tRY), new Point(bLX, bLY));
+        l3 = new Line(new Point(bLX, bLY), new Point(bRX, bRY));
+        l4 = new Line(new Point(bRX, bRY), new Point(tLX, tLY));
+        this.colBox = new ColBox(l1, l2, l3, l4);
+        return this.colBox;
+    }
+
+    lengthDirX(len, dir){
+        return Math.cos(dir) * len;
+    }
+
+    lengthDirY(len, dir){
+        return Math.sin(dir) * len;
     }
 
     getChildren(){
@@ -53,10 +98,6 @@ class Stick {
         if(this.daughter && typeof this.daughter === 'object')
             children.push(this.daughter.getChildren());
         return children;
-    }
-
-    destroy(){
-        Storage.destroy('stick', this.id);
     }
 }
 

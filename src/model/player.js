@@ -3,37 +3,21 @@
  */
 const Storage = require('../storage/storage');
 const Microcosm = require('./microcosm');
+const Room = require('./room');
 
 class Player {
-    constructor(id){
-        this.id = id;
-        this.microcosm = null;
+    constructor(name, address){
+        this.microcosm = new Microcosm(Room.randomX(), Room.randomY(), 0);
         this.centerX = -1;
         this.centerY = -1;
         this.mouseX = -1;
         this.mouseY = -1;
-        Storage.find('player', this.id, function(row){
-            this.row = row[0];
-            const mID = row[0].microcosm_id;
-            this.splinters = row[0].splinters;
-            this.mID = mID;
-            this.microcosm = new Microcosm(mID);
-        }.bind(this));
-    }
-
-    destroy(){
-        Storage.destroy('player', this.id);
-        if(this.microcosm)
-            this.microcosm.destroy();
+        this.splinters = 0;
     }
 
 
     addSplinter(){
-        Storage.find('player', this.id, function(row){
-            this.row = row[0];
-            this.splinters = this.row.splinters;
-            Storage.update('player', this.id, {splinters: this.splinters++})
-        }.bind(this));
+        this.splinters++;
     }
 }
 

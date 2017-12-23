@@ -3,19 +3,23 @@
  */
 
 const Storage = require('../storage/storage');
+const Line = require('../util/line');
+const Point = require('../util/point');
+const ColBox = require('../util/colBox');
 
 class Splinter {
-    constructor(id, x, y, type){
-        this.id = id;
+    constructor(x, y, type){
         this.x = x;
         this.y = y;
         this.type = type;
-        this.exists = true;
-    }
-
-    destroy(){
-        this.exists = false;
-        Storage.destroy('splinter', this.id);
+        const width = 50;
+        const height = 50;
+        this.colBox = new ColBox(
+            new Line(new Point(x - width / 2, y - height / 2), new Point(x + width / 2, y - height / 2)),
+            new Line(new Point(x + width / 2, y - height / 2), new Point(x + width / 2, y + height / 2)),
+            new Line(new Point(x - width / 2, y + height / 2), new Point(x + width / 2, y + height / 2)),
+            new Line(new Point(x - width / 2, y - height / 2), new Point(x - width / 2, y + height / 2))
+        )
     }
 
     static randomType(){

@@ -9,24 +9,20 @@ const Renderable = require('../../rendering/Renderable');
 const speed = 5;
 
 class Microcosm {
-    constructor(id) {
-        this.id = id;
-        Storage.find('microcosm', this.id, function(row){
-            this.row = row[0];
-            this.stick = new Stick(row[0].root_stick_id, null, 'neuter');
-        }.bind(this));
+    constructor(x, y, direction) {
+        this.x = x;
+        this.y =y;
+        this.direction = direction;
+        this.stick = new Stick(null);
+        this.type = Microcosm.randomType();
     }
 
     getX(){
-        if(this.row)
-            return this.row.x;
-        return -1;
+        return this.x;
     }
 
     getY(){
-        if(this.row)
-            return this.row.y;
-        return -1;
+        return this.y;
     }
 
     sticks(){
@@ -35,18 +31,20 @@ class Microcosm {
 
     renderSticks(arr){
         if(this.stick) {
-            let x = this.row.x;
-            let y = this.row.y;
-            let dir = this.row.direction;
+            let x = this.x;
+            let y = this.y;
+            let dir = this.direction;
             this.renderStickTree(this.stick, x, y, dir, arr);
         }
     }
 
     renderStickTree(rootStick, x, y, dir, arr){
-        arr.push(new Renderable(x, y, dir, this.row.type));
-        rootStick.updateChildren();
-        if(rootStick.son && rootStick.son.row){
-            let sonDir = rootStick.son.row.angle + dir;
+        //Tell the stick where it is
+        rootStick.updatePosition(x,y,dir);
+        arr.push(new Renderable(x, y, dir, this.type));
+        //rootStick.updateChildren();
+        if(rootStick.son){
+            let sonDir = rootStick.son.angle + dir;
             let anchorX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir);
             let anchorY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir);
             //arr.push(new Renderable(anchorX, anchorY, 0, 'blip'));
@@ -54,8 +52,8 @@ class Microcosm {
             let centerY = anchorY + this.lengthDirY(Stick.getLength() / 2, sonDir);
             this.renderStickTree(rootStick.son, centerX, centerY, sonDir, arr);
         }
-        if(rootStick.daughter && rootStick.daughter.row){
-            let daughterDir = rootStick.daughter.row.angle + dir;
+        if(rootStick.daughter){
+            let daughterDir = rootStick.daughter.angle + dir;
             let anchorX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
             let anchorY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
             //arr.push(new Renderable(anchorX, anchorY, 0, 'blip'));
@@ -78,32 +76,20 @@ class Microcosm {
         return types[Math.floor(Math.random() * types.length)];
     }
 
-    destroy(){
-        Storage.destroy('microcosm', this.id);
+    checkSplinterCollisions(player){
         const allSticks = this.sticks();
-        allSticks.map((s) => {
-           s.destroy();
-        });
-    }
-
-    checkSplinterCollisions(player, splinters){
-        const allSticks = this.sticks();
-        const microcosm = this;
         allSticks.forEach((s) => {
-            let collisions = s.collidedSplinters(splinters);
+            let collisions = s.collidedSplinters();
             collisions.forEach((c)=>{
                 player.addSplinter();
-                c.destroy();
             });
         });
     }
 
     moveTowards(cx, cy, x, y){
-        if(!this.row)
-            return;
-        let myX = this.row.x;
-        let myY = this.row.y;
-        let myDirection = this.row.direction;
+        let myX = this.x;
+        let myY = this.y;
+        let myDirection = this.direction;
         let angle = this.angle(cx, cy, x, y);
         let diff = angle - myDirection;
         if(diff > Math.PI)
@@ -119,10 +105,9 @@ class Microcosm {
         myX += Math.cos(myDirection) * speed;
         myX = Math.max(0, Math.min(myX, Room.getWidth()));
         myY = Math.max(0, Math.min(myY, Room.getHeight()));
-        this.row.x = myX;
-        this.row.y = myY;
-        this.row.direction = myDirection;
-        Storage.update('microcosm', this.id, {direction: myDirection, x: myX, y: myY});
+        this.x = myX;
+        this.y = myY;
+        this.direction = myDirection;
     }
 
     angle(cx, cy, ex, ey) {
