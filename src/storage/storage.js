@@ -79,6 +79,18 @@ class Storage{
         });
     }
 
+    static getAll(modelName, callback){
+        Storage.connect();
+        con.query(`SELECT * FROM ${tables[modelName]}`, [], function(err, results) {
+            if(err){
+                console.error(err);
+                console.log(query);
+                console.log(modelName);
+            }
+            callback(results);
+        });
+    }
+
     static create(modelName, props, callback){
         Storage.connect();
         const cols = Object.keys(props);

@@ -10,9 +10,11 @@ class Splinter {
         this.x = x;
         this.y = y;
         this.type = type;
+        this.exists = true;
     }
 
     destroy(){
+        this.exists = false;
         Storage.destroy('splinter', this.id);
     }
 

@@ -15,6 +15,7 @@ class Player {
         Storage.find('player', this.id, function(row){
             this.row = row[0];
             const mID = row[0].microcosm_id;
+            this.splinters = row[0].splinters;
             this.mID = mID;
             this.microcosm = new Microcosm(mID);
         }.bind(this));
@@ -24,6 +25,15 @@ class Player {
         Storage.destroy('player', this.id);
         if(this.microcosm)
             this.microcosm.destroy();
+    }
+
+
+    addSplinter(){
+        Storage.find('player', this.id, function(row){
+            this.row = row[0];
+            this.splinters = this.row.splinters;
+            Storage.update('player', this.id, {splinters: this.splinters++})
+        }.bind(this));
     }
 }
 

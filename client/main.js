@@ -62,12 +62,11 @@ function drawRotated(x, y, image, radians, w, h){
 
 function draw(){
     const context = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth * 2;
+    canvas.height = window.innerHeight * 2;
     context.clearRect(0,0,canvas.width, canvas.height);
     context.fillStyle='#aaa';
     context.fillRect(0,0,canvas.width, canvas.height);
-    console.log(x, y);
     if(renderables)
         renderables.forEach((r) => {
             let t = r.type;
@@ -75,7 +74,6 @@ function draw(){
             if(!img) {
                 img = document.getElementById(t);
                 images[t] = img;
-                console.log(t, img);
             }
             let xx = r.x - x + canvas.width / 2;
             let yy = r.y - y + canvas.height / 2;

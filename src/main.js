@@ -44,6 +44,7 @@ function main(){
         if (microcosm) {
             microcosm.renderSticks(renderables);
             microcosm.moveTowards(player.centerX, player.centerY, player.mouseX, player.mouseY);
+            microcosm.checkSplinterCollisions(player, splinters);
             con.socket.emit('position', {x: microcosm.getX(), y: microcosm.getY()})
         }
     });
@@ -58,6 +59,13 @@ function createSplinter(){
         let type = Splinter.randomType();
         Storage.create('splinter', {x: x, y: y, type: type}, (id)=>{
             splinters.push(new Splinter(id, x, y, type));
+            splinters = Storage.getAll('splinter', (s) => {
+                splinters = [];
+                s.forEach((row)=>{
+                    const {id, x, y, type} = row;
+                    splinters.push(new Splinter(id, x, y, type));
+                });
+            });
         });
     }
 }
@@ -84,6 +92,15 @@ function logIn(socket){
     const name = socket.handshake.query.name;
     const address = socket.handshake.address;
     Storage.create('stick', {angle: 0}, function(stickID) {
+        // Storage.create('stick', {angle: .5}, function(sonID){
+        //     Storage.update('stick', stickID, {son_id: sonID});
+        //     Storage.create('stick', {angle: .5}, function(s){
+        //         Storage.update('stick', sonID, {son_id: s})
+        //     });
+        // });
+        // Storage.create('stick', {angle: -Math.PI / 4}, function(daughterID){
+        //     Storage.update('stick', stickID, {daughter_id: daughterID})
+        // });
         Storage.create('microcosm', {
             x: Room.randomX(),
             y: Room.randomY(),
