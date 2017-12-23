@@ -96,4 +96,21 @@ function drawGUI(){
     const context = canvas.getContext('2d');
     const h = canvas.height;
     const w = canvas.width;
+    context.fillStyle = 'rgba(0,0,0,.5)';
+    const boxHeight = 700;
+    const boxWidth = 550;
+    context.fillRect(w - boxWidth, 0, boxWidth, boxHeight);
+    const lineHeight = boxHeight / 10;
+    const margin = 10;
+    if(scoreBoard)
+        scoreBoard.forEach((s, i) => {
+            const name = s.name;
+            const score = s.score;
+            context.fillStyle = 'gold';
+            context.font = "bold 50px Arial";
+            const textWidth = context.measureText(name + ': ').width;
+            context.fillText(name + ': ', w - boxWidth + margin, lineHeight * (i+1));
+            context.fillStyle = 'white';
+            context.fillText(score, w - boxWidth + margin + textWidth, lineHeight * (i+1));
+        });
 }

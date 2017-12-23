@@ -29,6 +29,8 @@ app.get('/client', function(req, res){
 
 init();
 setInterval(main, 1000/30);
+setInterval(collisions, 1000/5);
+setInterval(secondary, 1000);
 
 function init(){
     // Storage.deleteAll('splinter');
@@ -38,23 +40,38 @@ function main(){
     let renderables = game.splinters.map((s) => {
         return new Renderable(s.x, s.y, 0, s.type)
     });
-    game.connections.sort((c1, c2) => {
-        return c1.player.splinters < c2.player.splinters ? 1 : c1.player.splinters === c2.player.splinters ? 0 : -1;
-    });
     game.connections.forEach((con) => {
         let player = con.player;
         let microcosm = player.microcosm;
         if (microcosm) {
             microcosm.renderSticks(renderables);
             microcosm.moveTowards(player.centerX, player.centerY, player.mouseX, player.mouseY);
-            microcosm.checkSplinterCollisions(player);
             con.socket.emit('position', {x: microcosm.getX(), y: microcosm.getY()});
-            con.socket.emit('properties', {splinters: player.splinters, sticks: player.sticks});
-            con.socket.emit('scores', game.connections.slice(0, Math.min(10, game.connections.length)).map((p) => {console.log(p.player.splinters); return {name: p.player.name, score: p.player.splinters}}))
         }
     });
     createSplinter();
     io.emit('renderables', renderables);
+}
+
+function collisions(){
+    game.connections.forEach((con) => {
+        let player = con.player;
+        let microcosm = player.microcosm;
+        if (microcosm) {
+            microcosm.checkSplinterCollisions(player);
+        }
+    });
+}
+
+function secondary(){
+    game.connections.sort((c1, c2) => {
+        return c1.player.splinters < c2.player.splinters ? 1 : c1.player.splinters === c2.player.splinters ? 0 : -1;
+    });
+    game.connections.forEach((con) => {
+        let player = con.player;
+        con.socket.emit('properties', {splinters: player.splinters, sticks: player.sticks});
+        con.socket.emit('scores', game.connections.slice(0, Math.min(10, game.connections.length)).map((p) => {return {name: p.player.name, score: p.player.splinters}}))
+    });
 }
 
 function createSplinter(){
