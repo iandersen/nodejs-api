@@ -7,6 +7,9 @@ let images = {};
 
 let socket, mouseX, mouseY, lastMouseX, lastMouseY, x, y, renderables, splinters, sticks, scoreBoard;
 let canvas = document.getElementById('gameCanvas');
+const WIDTH = 10000;
+const HEIGHT = 10000;
+const GRID_SIZE = 100;
 
 $('#startButton').click(function(){
     let name = $('#nameField').val();
@@ -67,14 +70,12 @@ function drawRotated(x, y, image, radians, w, h){
     const rotatedImage = rotateAndCache(image, radians, w, h);
     context.drawImage(rotatedImage, x, y);
 }
-
+let gridBKG;
 function draw(){
     const context = canvas.getContext('2d');
     canvas.width = window.innerWidth * 2;
     canvas.height = window.innerHeight * 2;
-    context.clearRect(0,0,canvas.width, canvas.height);
-    context.fillStyle='#aaa';
-    context.fillRect(0,0,canvas.width, canvas.height);
+    drawBKG(context);
     if(renderables)
         renderables.forEach((r) => {
             let t = r.type;
@@ -90,6 +91,37 @@ function draw(){
                 drawRotated(xx - s / 2,yy - s / 2,img,r.radians, img.width, img.height);
             }
         });
+}
+
+function gridImage(){
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    c.width = WIDTH;
+    c.height = HEIGHT;
+    ctx.fillStyle='#fff';
+    gridBKG = gridBKG || document.getElementById('gridsquare');
+    for(let i = 0; i < WIDTH; i+=GRID_SIZE){
+        for(let n = 0; n < HEIGHT; n+=GRID_SIZE){
+            ctx.fillRect(i,n,GRID_SIZE,GRID_SIZE);
+            ctx.drawImage(gridBKG, i, n, GRID_SIZE, GRID_SIZE);
+        }
+    }
+    return c;
+}
+let grid;
+function drawBKG(context){
+    grid = grid || gridImage();
+    context.clearRect(0,0,canvas.width, canvas.height);
+    context.fillStyle='#aaa';
+    context.fillRect(0,0,canvas.width, canvas.height);
+    const sx = Math.max(0, x - canvas.width / 2);
+    const sy = Math.max(y - canvas.height / 2, 0);
+    const sw = Math.min(WIDTH - sx, canvas.width);
+    const sh = Math.min(HEIGHT - sy, canvas.height);
+    const dx = Math.max(canvas.width /2 - x, 0);
+    const dy = Math.max(canvas.height /2 - y, 0);
+    context.drawImage(grid, sx, sy, sw, sh, dx, dy, sw, sh);
+
 }
 
 function drawGUI(){
