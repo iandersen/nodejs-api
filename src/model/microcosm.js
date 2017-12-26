@@ -5,8 +5,10 @@ const Storage = require('../storage/storage');
 const Stick = require('./stick');
 const Room = require('./room');
 const Renderable = require('../../rendering/Renderable');
+const ColBox = require('../util/colBox');
 
 const speed = 5;
+let id = 0;
 
 class Microcosm {
     constructor(x, y, direction) {
@@ -15,6 +17,9 @@ class Microcosm {
         this.direction = direction;
         this.stick = new Stick(null);
         this.type = Microcosm.randomType();
+        this.id = id++;
+        this.stick.microcosmID = this.id;
+        this.stick.microcosm = this;
     }
 
     getX(){
@@ -26,11 +31,12 @@ class Microcosm {
     }
 
     sticks(){
-        return this.stick.getChildren();
+        if(this.stick && this.stick.exists)
+            return this.stick.getChildren();
     }
 
     renderSticks(arr){
-        if(this.stick) {
+        if(this.stick && this.stick.exists) {
             let x = this.x;
             let y = this.y;
             let dir = this.direction;
@@ -39,10 +45,16 @@ class Microcosm {
     }
 
     renderStickTree(rootStick, x, y, dir, arr){
+        if(!rootStick.exists)
+            return;
         //Tell the stick where it is
         rootStick.updatePosition(x,y,dir);
         arr.push(new Renderable(x, y, dir, this.type));
         //rootStick.updateChildren();
+        if(rootStick.son && !rootStick.son.exists)
+            rootStick.son = null;
+        if(rootStick.daughter && !rootStick.daughter.exists)
+            rootStick.daughter = null;
         if(rootStick.son){
             let sonDir = rootStick.son.angle + dir;
             let anchorX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir);
@@ -86,6 +98,22 @@ class Microcosm {
         });
     }
 
+    checkStickCollisions(sticks){
+        const mySticks = this.sticks();
+        const enemySticks = sticks.filter((s)=>{
+            return s.microcosmID !== this.id;
+        });
+        mySticks.forEach((s) => {
+            enemySticks.forEach((es) => {
+                if(s.tip1Box.isCollided(es.hitBox) || s.tip2Box.isCollided(es.hitBox)){
+                    es.destroy();
+                    console.log('Stick hit');
+                }
+            });
+        });
+
+    }
+
     moveTowards(cx, cy, x, y){
         let myX = this.x;
         let myY = this.y;
@@ -118,6 +146,13 @@ class Microcosm {
         let theta = Math.atan2(dy, dx); // range (-PI, PI]
         //theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
         return theta;
+    }
+
+    destroy(){
+        console.log('Microcosm DESTROYED');
+        if(this.player){
+            this.player.destroy();
+        }
     }
 }
 

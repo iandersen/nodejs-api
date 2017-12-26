@@ -29,6 +29,9 @@ $('#startButton').click(function(){
     socket.on('renderables', (r)=>{
         renderables = r
     });
+    socket.on('dead', (s)=>{
+        window.location.reload();
+    });
     $('#gameTitle').remove();
     $('#startBox').remove();
     let timer = window.setInterval(main, 1000/30);

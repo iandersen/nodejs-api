@@ -6,7 +6,7 @@ let instance = null;
 class GameState {
     constructor(){
         if(!instance) {
-            this.connections = [];
+            this.players = [];
             this.splinters = [];
             instance = this;
         }

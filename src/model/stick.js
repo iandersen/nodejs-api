@@ -7,6 +7,7 @@ const Line = require('../util/line');
 const Point = require('../util/point');
 const ColBox = require('../util/colBox');
 const Game = require('../gameState');
+const Splinter = require('./splinter');
 const game = new Game();
 
 class Stick {
@@ -18,6 +19,11 @@ class Stick {
         this.rotation = 0;
         this.daughter = null;
         this.son = null;
+        this.tip1Box = null;
+        this.tip2Box = null;
+        this.hitBox = null;
+        this.exists = true;
+        this.microcosm = null;
     }
 
     static getLength(){
@@ -56,6 +62,10 @@ class Stick {
         this.frontY = y + this.lengthDirY(Stick.getLength() / 2, dir);
         this.backX = x + this.lengthDirX(Stick.getLength() / 2, dir - Math.PI);
         this.backY = y + this.lengthDirY(Stick.getLength() / 2, dir - Math.PI);
+        this.mfrontX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir);
+        this.mfrontY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir);
+        this.mbackX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
+        this.mbackY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
         this.getColBox();
     }
 
@@ -79,6 +89,33 @@ class Stick {
         l3 = new Line(new Point(bLX, bLY), new Point(bRX, bRY));
         l4 = new Line(new Point(bRX, bRY), new Point(tLX, tLY));
         this.colBox = new ColBox(l1, l2, l3, l4);
+        let mtLX, mtLY, mtRX, mtRY, mbLX, mbLY, mbRX, mbRY;
+        mtLX=this.mfrontX+this.lengthDirX(w/2,this.rotation+Math.PI/2);
+        mtLY=this.mfrontY+this.lengthDirY(w/2,this.rotation+Math.PI/2);
+
+        mtRX=this.mfrontX+this.lengthDirX(w/2,this.rotation-Math.PI/2);
+        mtRY=this.mfrontY+this.lengthDirY(w/2,this.rotation-Math.PI/2);
+
+        mbLX=this.mbackX+this.lengthDirX(w/2,this.rotation+Math.PI/2);
+        mbLY=this.mbackY+this.lengthDirY(w/2,this.rotation+Math.PI/2);
+
+        mbRX=this.mbackX+this.lengthDirX(w/2,this.rotation-Math.PI/2);
+        mbRY=this.mbackY+this.lengthDirY(w/2,this.rotation-Math.PI/2);
+        l1 = new Line(new Point(mtLX, mtLY), new Point(mtRX, mtRY));
+        l2 = new Line(new Point(mtRX, mtRY), new Point(mbLX, mbLY));
+        l3 = new Line(new Point(mbLX, mbLY), new Point(mbRX, mbRY));
+        l4 = new Line(new Point(mbRX, mbRY), new Point(mtLX, mtLY));
+        this.hitBox = new ColBox(l1, l2, l3, l4);
+        l1 = new Line(new Point(tLX, tLY), new Point(tRX, tRY));
+        l2 = new Line(new Point(tRX, tRY), new Point(mtRX, mtRY));
+        l3 = new Line(new Point(mtRX, mtRY), new Point(mtLX, mtLY));
+        l4 = new Line(new Point(mtLX, mtLY), new Point(tLX, tLY));
+        this.tip1Box = new ColBox(l1, l2, l3, l4);
+        l1 = new Line(new Point(bLX, bLY), new Point(bRX, bRY));
+        l2 = new Line(new Point(bRX, bRY), new Point(mbRX, mbRY));
+        l3 = new Line(new Point(mbRX, mbRY), new Point(mbLX, mbLY));
+        l4 = new Line(new Point(mbLX, mbLY), new Point(bLX, bLY));
+        this.tip2Box = new ColBox(l1, l2, l3, l4);
         return this.colBox;
     }
 
@@ -93,11 +130,35 @@ class Stick {
     getChildren(){
         let children = [];
         children.push(this);
+        if(this.son && !this.son.exists)
+            this.son = null;
+        if(this.daughter && !this.daughter.exists)
+            this.daughter = null;
         if(this.son && typeof this.son === 'object')
             children.push(this.son.getChilren());
         if(this.daughter && typeof this.daughter === 'object')
             children.push(this.daughter.getChildren());
         return children;
+    }
+
+    destroy(){
+        console.log('Stick DESTROYED!');
+        const dir = this.rotation;
+        this.backX = this.x + this.lengthDirX(Stick.getLength() / 2, dir - Math.PI);
+        this.backY = this.y + this.lengthDirY(Stick.getLength() / 2, dir - Math.PI);
+        const drops = 15;
+        for(let i = 0; i < drops; i++){
+            let xx= this.backX + this.lengthDirX(Stick.getLength() / (i+1), dir);
+            let yy= this.backY + this.lengthDirX(Stick.getLength() / (i+1), dir);
+            game.splinters.push(new Splinter(xx, yy, Splinter.randomType()))
+        }
+        this.exists = false;
+        if(this.son)
+            this.son.destroy();
+        if(this.daughter)
+            this.daughter.destroy();
+        if(this.microcosm)//If it is the root stick
+            this.microcosm.destroy();
     }
 }
 

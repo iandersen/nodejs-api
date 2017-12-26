@@ -7,6 +7,8 @@ class ColBox {
     }
 
     isCollided(colBox){
+        if(!colBox)
+            return false;
         let col = false;
         this.lines.forEach((l)=>{
             colBox.lines.forEach((l2)=>{

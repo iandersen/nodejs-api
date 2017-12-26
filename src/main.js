@@ -40,13 +40,12 @@ function main(){
     let renderables = game.splinters.map((s) => {
         return new Renderable(s.x, s.y, 0, s.type)
     });
-    game.connections.forEach((con) => {
-        let player = con.player;
+    game.players.forEach((player) => {
         let microcosm = player.microcosm;
         if (microcosm) {
             microcosm.renderSticks(renderables);
             microcosm.moveTowards(player.centerX, player.centerY, player.mouseX, player.mouseY);
-            con.socket.emit('position', {x: microcosm.getX(), y: microcosm.getY()});
+            player.socket.emit('position', {x: microcosm.getX(), y: microcosm.getY()});
         }
     });
     createSplinter();
@@ -54,23 +53,31 @@ function main(){
 }
 
 function collisions(){
-    game.connections.forEach((con) => {
-        let player = con.player;
+    let allSticks = [];
+    game.players.forEach((player) => {
+        let microcosm = player.microcosm;
+        if (microcosm) {
+            microcosm.sticks().forEach((s)=>{
+                allSticks.push(s);
+            });
+        }
+    });
+    game.players.forEach((player) => {
         let microcosm = player.microcosm;
         if (microcosm) {
             microcosm.checkSplinterCollisions(player);
+            microcosm.checkStickCollisions(allSticks);
         }
     });
 }
 
 function secondary(){
-    game.connections.sort((c1, c2) => {
-        return c1.player.splinters < c2.player.splinters ? 1 : c1.player.splinters === c2.player.splinters ? 0 : -1;
+    game.players.sort((c1, c2) => {
+        return c1.splinters < c2.splinters ? 1 : c1.splinters === c2.splinters ? 0 : -1;
     });
-    game.connections.forEach((con) => {
-        let player = con.player;
-        con.socket.emit('properties', {splinters: player.splinters, sticks: player.sticks});
-        con.socket.emit('scores', game.connections.slice(0, Math.min(10, game.connections.length)).map((p) => {return {name: p.player.name, score: p.player.splinters}}))
+    game.players.forEach((player) => {
+        player.socket.emit('properties', {splinters: player.splinters, sticks: player.sticks});
+        player.socket.emit('scores', game.players.slice(0, Math.min(10, game.players.length)).map((p) => {return {name: p.name, score: p.splinters}}))
     });
 }
 
@@ -87,9 +94,8 @@ function createSplinter(){
 io.on('connection', function(socket){
     logIn(socket);
     socket.on('mouse', function(pos){
-        let conn = getConnection(socket);
-        if(conn) {
-            let player = conn.player;
+        let player = getPlayer(socket);
+        if(player) {
             player.mouseX = pos.x;
             player.mouseY = pos.y;
             player.centerX = pos.w / 2;
@@ -105,29 +111,29 @@ function logIn(socket){
     console.log('a user connected');
     const name = socket.handshake.query.name;
     const address = socket.handshake.address;
-    game.connections.push(new UserConnection(socket, new Player(name, address)));
+    game.players.push(new Player(name, address, socket));
 }
 
-function getConnection(socket){
+function getPlayer(socket){
     let id = -1;
-    const userConnection = game.connections.filter((u, i) => {
+    const p = game.players.filter((u, i) => {
         if(u.socket.id === socket.id)
             id = i;
         return id === i;
     });
-    return userConnection ? userConnection[0] : -1;
+    return p ? p[0] : -1;
 }
 
 function logOut(socket){
     let id = -1;
-    const userConnection = game.connections.filter((u, i) => {
+    game.players.filter((u, i) => {
         if(u.socket.id === socket.id)
             id = i;
         return id === i;
     });
-    game.connections.splice(id, 1);
+    game.players.splice(id, 1);
     console.log('user disconnected');
-    console.log('Users connected: ', game.connections.length);
+    console.log('Users connected: ', game.players.length);
 }
 
 http.listen(8080, () => console.log('Listening on port 8080'));

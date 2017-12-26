@@ -52,7 +52,7 @@
      devtool: 'source-map'
  };
 
- module.exports = [ serverConfig, clientConfig ];
+ module.exports = [clientConfig ];
  // module.exports = {
  //     entry: {
  //         main: './src/main.js',
