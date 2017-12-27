@@ -7,7 +7,7 @@ const Room = require('./room');
 const Renderable = require('../../rendering/Renderable');
 const ColBox = require('../util/colBox');
 
-const speed = 5;
+const speed = 9;
 let id = 0;
 
 class Microcosm {
@@ -49,7 +49,13 @@ class Microcosm {
             return;
         //Tell the stick where it is
         rootStick.updatePosition(x,y,dir);
+        let sonTipX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir);
+        let sonTipY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir);
+        let daughterTipX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
+        let daughterTipY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
         arr.push(new Renderable(x, y, dir, this.type));
+        arr.push(new Renderable(sonTipX, sonTipY, 0, 'blip'));
+        arr.push(new Renderable(daughterTipX, daughterTipY, 0, 'blip'));
         //rootStick.updateChildren();
         if(rootStick.son && !rootStick.son.exists)
             rootStick.son = null;
@@ -59,7 +65,7 @@ class Microcosm {
             let sonDir = rootStick.son.angle + dir;
             let anchorX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir);
             let anchorY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir);
-            //arr.push(new Renderable(anchorX, anchorY, 0, 'blip'));
+            arr.push(new Renderable(anchorX, anchorY, dir, 'blip'));
             let centerX = anchorX + this.lengthDirX(Stick.getLength() / 2, sonDir);
             let centerY = anchorY + this.lengthDirY(Stick.getLength() / 2, sonDir);
             this.renderStickTree(rootStick.son, centerX, centerY, sonDir, arr);
@@ -68,7 +74,7 @@ class Microcosm {
             let daughterDir = rootStick.daughter.angle + dir;
             let anchorX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
             let anchorY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
-            //arr.push(new Renderable(anchorX, anchorY, 0, 'blip'));
+            arr.push(new Renderable(anchorX, anchorY, dir, 'blip'));
             let centerX = anchorX + this.lengthDirX(Stick.getLength() / 2, daughterDir);
             let centerY = anchorY + this.lengthDirY(Stick.getLength() / 2, daughterDir);
             this.renderStickTree(rootStick.daughter, centerX, centerY, daughterDir, arr);

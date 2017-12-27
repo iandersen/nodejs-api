@@ -29,7 +29,7 @@ app.get('/client', function(req, res){
 
 init();
 setInterval(main, 1000/30);
-setInterval(collisions, 1000/5);
+setInterval(collisions, 1000/15);
 setInterval(secondary, 1000);
 
 function init(){
@@ -37,9 +37,7 @@ function init(){
 }
 
 function main(){
-    let renderables = game.splinters.map((s) => {
-        return new Renderable(s.x, s.y, 0, s.type)
-    });
+    let renderables = [];
     game.players.forEach((player) => {
         let microcosm = player.microcosm;
         if (microcosm) {
@@ -49,7 +47,9 @@ function main(){
         }
     });
     createSplinter();
-    io.emit('renderables', renderables);
+    io.emit('renderables', {addedStatics: game.addedSplinters, removedStatics: game.removedSplinters, dynamics: renderables});
+    game.addedSplinters = [];
+    game.removedSplinters = [];
 }
 
 function collisions(){
@@ -82,12 +82,15 @@ function secondary(){
 }
 
 function createSplinter(){
-    if(game.splinters.length < SPLINTER_LIMIT){
-        DONT_UPDATE_SPLINTERS = true;
-        let x = Room.randomX();
-        let y = Room.randomY();
-        let type = Splinter.randomType();
-        game.splinters.push(new Splinter(x, y, type));
+    let x = Room.randomX();
+    let y = Room.randomY();
+    let type = Splinter.randomType();
+    for(let i = 0; i < SPLINTER_LIMIT; i++){
+        if(!game.splinters[i]){
+            game.splinters[i] = new Splinter(x,y,type);
+            game.addedSplinters.push({index: i, renderable: new Renderable(x,y,0,type)});
+            break;
+        }
     }
 }
 
@@ -105,6 +108,7 @@ io.on('connection', function(socket){
     socket.on('disconnect', function(){
         logOut(socket);
     });
+    socket.emit('renderables', {addedStatics: game.splinters.map((s, i)=>{return {renderable: s, index: i}})})
 });
 
 function logIn(socket){

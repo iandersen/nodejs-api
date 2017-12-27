@@ -8,6 +8,9 @@ class GameState {
         if(!instance) {
             this.players = [];
             this.splinters = [];
+            this.addedSplinters = [];
+            this.removedSplinters = [];
+            this.maxSplinters = 500;
             instance = this;
         }
         return instance;

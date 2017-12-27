@@ -9,6 +9,7 @@ const ColBox = require('../util/colBox');
 const Game = require('../gameState');
 const Splinter = require('./splinter');
 const game = new Game();
+const Renderable = require('../../rendering/Renderable');
 
 class Stick {
     constructor(parent){
@@ -44,12 +45,14 @@ class Stick {
         if(!colBox)
             return ret;
         game.splinters.forEach((s, i)=>{
-            if(Math.abs(s.x - this.x) < Stick.getLength() && Math.abs(s.y - this.y) < Stick.getLength()) {
-                if (colBox.isCollided(s.colBox)) {
-                    game.splinters.splice(i,1);
-                    ret.push(s);
+            if(s)
+                if(Math.abs(s.x - this.x) < Stick.getLength() && Math.abs(s.y - this.y) < Stick.getLength()) {
+                    if (colBox.isCollided(s.colBox)) {
+                        game.splinters[i] = null;
+                        game.removedSplinters.push(i);
+                        ret.push(s);
+                    }
                 }
-            }
         });
         return ret;
     }
@@ -150,7 +153,14 @@ class Stick {
         for(let i = 0; i < drops; i++){
             let xx= this.backX + this.lengthDirX(Stick.getLength() / (i+1), dir);
             let yy= this.backY + this.lengthDirX(Stick.getLength() / (i+1), dir);
-            game.splinters.push(new Splinter(xx, yy, Splinter.randomType()))
+            const type = Splinter.randomType();
+            for(let n = game.maxSplinters; true; n++){
+                if(!game.splinters[n]){
+                    game.splinters[n] = new Splinter(xx, yy, type);
+                    game.addedSplinters.push({index: n, renderable: new Renderable(xx,yy,0,type)});
+                    break;
+                }
+            }
         }
         this.exists = false;
         if(this.son)
