@@ -14,10 +14,13 @@ const Renderable = require('../../rendering/Renderable');
 class Stick {
     constructor(parent){
         this.parent = parent;
+        if(parent)
+            this.microcosmID = parent.microcosmID;
         this.length = Stick.getLength();
         this.x = 0;
         this.y = 0;
         this.rotation = 0;
+        this.angle = 0;
         this.daughter = null;
         this.son = null;
         this.tip1Box = null;
@@ -138,10 +141,21 @@ class Stick {
         if(this.daughter && !this.daughter.exists)
             this.daughter = null;
         if(this.son && typeof this.son === 'object')
-            children.push(this.son.getChilren());
+            this.son.getChildren().forEach((c)=>{
+                children.push(c);
+            });
         if(this.daughter && typeof this.daughter === 'object')
-            children.push(this.daughter.getChildren());
+            this.daughter.getChildren().forEach((c)=>{
+                children.push(c);
+            });
         return children;
+    }
+
+    subtractSplinters(num){
+        if(this.microcosm)
+            this.microcosm.subtractSplinters(num);
+        else if(this.parent)
+            this.parent.subtractSplinters(num);
     }
 
     destroy(){
@@ -162,6 +176,7 @@ class Stick {
                 }
             }
         }
+        this.subtractSplinters(30);
         this.exists = false;
         if(this.son)
             this.son.destroy();

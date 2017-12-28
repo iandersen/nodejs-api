@@ -44,6 +44,48 @@ class Microcosm {
         }
     }
 
+    addStickToFirstAvailable(){
+        let sonCount = 0;
+        let daughterCount = 0;
+        let s = this.stick;
+        let sonStick = null;
+        let daughterStick = null;
+        do{
+            sonStick = s;
+            sonCount++;
+            s = s.son;
+        }while(s);
+        s = this.stick;
+        do{
+            daughterStick = s;
+            daughterCount++;
+            s = s.daughter;
+        }while(s);
+        let newStick;
+        let parentStick;
+        console.log(sonStick, daughterStick);
+        if(sonCount <= daughterCount){
+            sonStick.son = new Stick(sonStick);
+            newStick = sonStick.son;
+            parentStick = sonStick;
+        }else{
+            daughterStick.daughter = new Stick(daughterStick);
+            newStick = daughterStick.daughter;
+            parentStick = daughterStick;
+        }
+        do{
+            newStick.angle = Math.random() * 2 * Math.PI;
+            newStick.rotation = Math.random() * 2 * Math.PI;
+            newStick.getColBox();
+            parentStick.getColBox();
+        }while(newStick.hitBox.isCollided(parentStick.hitBox));
+    }
+
+    subtractSplinters(num){
+        if(this.player)
+            this.player.subtractSplinters(num);
+    }
+
     renderStickTree(rootStick, x, y, dir, arr){
         if(!rootStick.exists)
             return;
@@ -54,8 +96,8 @@ class Microcosm {
         let daughterTipX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
         let daughterTipY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
         arr.push(new Renderable(x, y, dir, this.type));
-        arr.push(new Renderable(sonTipX, sonTipY, 0, 'blip'));
-        arr.push(new Renderable(daughterTipX, daughterTipY, 0, 'blip'));
+        //arr.push(new Renderable(sonTipX, sonTipY, 0, 'blip'));
+        //arr.push(new Renderable(daughterTipX, daughterTipY, 0, 'blip'));
         //rootStick.updateChildren();
         if(rootStick.son && !rootStick.son.exists)
             rootStick.son = null;
@@ -65,7 +107,7 @@ class Microcosm {
             let sonDir = rootStick.son.angle + dir;
             let anchorX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir);
             let anchorY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir);
-            arr.push(new Renderable(anchorX, anchorY, dir, 'blip'));
+            //arr.push(new Renderable(anchorX, anchorY, dir, 'blip'));
             let centerX = anchorX + this.lengthDirX(Stick.getLength() / 2, sonDir);
             let centerY = anchorY + this.lengthDirY(Stick.getLength() / 2, sonDir);
             this.renderStickTree(rootStick.son, centerX, centerY, sonDir, arr);
@@ -74,7 +116,7 @@ class Microcosm {
             let daughterDir = rootStick.daughter.angle + dir;
             let anchorX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
             let anchorY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
-            arr.push(new Renderable(anchorX, anchorY, dir, 'blip'));
+            //arr.push(new Renderable(anchorX, anchorY, dir, 'blip'));
             let centerX = anchorX + this.lengthDirX(Stick.getLength() / 2, daughterDir);
             let centerY = anchorY + this.lengthDirY(Stick.getLength() / 2, daughterDir);
             this.renderStickTree(rootStick.daughter, centerX, centerY, daughterDir, arr);

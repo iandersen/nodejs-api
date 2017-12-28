@@ -40,8 +40,19 @@ class Player {
         this.state = state;
     }
 
+    subtractSplinters(num){
+        this.splinters -= 30;
+        if(this.splinters < 0)
+            this.splinters = 0;
+    }
+
     addSplinter(){
         this.splinters++;
+        if(this.splinters % 30 === 0){
+            if(this.microcosm){
+                this.microcosm.addStickToFirstAvailable();
+            }
+        }
     }
 
     destroy(){
