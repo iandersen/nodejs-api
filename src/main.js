@@ -113,7 +113,7 @@ io.on('connection', function(socket){
 
 function logIn(socket){
     console.log('a user connected');
-    const name = socket.handshake.query.name;
+    const name = socket.handshake.query.name.substr(0,12);
     const address = socket.handshake.address;
     game.players.push(new Player(name, address, socket));
 }
