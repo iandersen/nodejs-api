@@ -10,6 +10,8 @@ const game = new Game();
 const MOVE_STATE = 0;
 const BUILD_STATE = 1;
 let id = 0;
+const splinterCount = 10;
+const increment = 10;
 
 class Player {
     constructor(name, address, socket){
@@ -26,6 +28,7 @@ class Player {
         this.state = MOVE_STATE;
         this.id = id++;
         this.socket = socket;
+        this.sticksLeft = splinterCount;
     }
 
     static BUILD_STATE(){
@@ -48,9 +51,11 @@ class Player {
 
     addSplinter(){
         this.splinters++;
-        if(this.splinters % 30 === 0){
-            if(this.microcosm){
+        this.sticksLeft--;
+        if(this.microcosm){
+            if(this.sticksLeft === 0){
                 this.microcosm.addStickToFirstAvailable();
+                this.sticksLeft = splinterCount + increment * this.microcosm.numSticks;
             }
         }
     }

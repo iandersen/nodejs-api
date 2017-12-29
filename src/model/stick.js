@@ -80,13 +80,10 @@ class Stick {
         const w = Stick.getWidth();
         tLX=this.frontX+this.lengthDirX(w/2,this.rotation+Math.PI/2);
         tLY=this.frontY+this.lengthDirY(w/2,this.rotation+Math.PI/2);
-
         tRX=this.frontX+this.lengthDirX(w/2,this.rotation-Math.PI/2);
         tRY=this.frontY+this.lengthDirY(w/2,this.rotation-Math.PI/2);
-
         bLX=this.backX+this.lengthDirX(w/2,this.rotation+Math.PI/2);
         bLY=this.backY+this.lengthDirY(w/2,this.rotation+Math.PI/2);
-
         bRX=this.backX+this.lengthDirX(w/2,this.rotation-Math.PI/2);
         bRY=this.backY+this.lengthDirY(w/2,this.rotation-Math.PI/2);
         let l1, l2, l3, l4;
@@ -98,13 +95,10 @@ class Stick {
         let mtLX, mtLY, mtRX, mtRY, mbLX, mbLY, mbRX, mbRY;
         mtLX=this.mfrontX+this.lengthDirX(w/2,this.rotation+Math.PI/2);
         mtLY=this.mfrontY+this.lengthDirY(w/2,this.rotation+Math.PI/2);
-
         mtRX=this.mfrontX+this.lengthDirX(w/2,this.rotation-Math.PI/2);
         mtRY=this.mfrontY+this.lengthDirY(w/2,this.rotation-Math.PI/2);
-
         mbLX=this.mbackX+this.lengthDirX(w/2,this.rotation+Math.PI/2);
         mbLY=this.mbackY+this.lengthDirY(w/2,this.rotation+Math.PI/2);
-
         mbRX=this.mbackX+this.lengthDirX(w/2,this.rotation-Math.PI/2);
         mbRY=this.mbackY+this.lengthDirY(w/2,this.rotation-Math.PI/2);
         l1 = new Line(new Point(mtLX, mtLY), new Point(mtRX, mtRY));
@@ -158,8 +152,15 @@ class Stick {
             this.parent.subtractSplinters(num);
     }
 
+    tellPlayerToShrink(){
+        if(this.microcosm)
+            this.microcosm.player.socket.emit('stickLost', {});
+        else if(this.parent)
+            this.parent.tellPlayerToShrink();
+    }
+
     destroy(){
-        console.log('Stick DESTROYED!');
+        this.tellPlayerToShrink();
         const dir = this.rotation;
         this.backX = this.x + this.lengthDirX(Stick.getLength() / 2, dir - Math.PI);
         this.backY = this.y + this.lengthDirY(Stick.getLength() / 2, dir - Math.PI);

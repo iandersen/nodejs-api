@@ -5,11 +5,13 @@ require('../sass/main.scss');
 const types = require('../rendering/types');
 let images = {};
 
-let socket, mouseX, mouseY, lastMouseX, lastMouseY, x, y, renderables, splinters, sticks, scoreBoard;
+let socket, mouseX, mouseY, lastMouseX, lastMouseY, x, y, renderables, splinters, sticks, scoreBoard, bounds;
 let statics = [];
 let dynamics = [];
 const canvas = document.getElementById('gameCanvas');
+const guiCanvas = document.getElementById('guiCanvas');
 const context = canvas.getContext('2d');
+const guiContext = guiCanvas.getContext('2d');
 const WIDTH = 10000;
 const HEIGHT = 10000;
 const GRID_SIZE = 100;
@@ -17,6 +19,8 @@ const imageCache = {};
 let attempts = 0;
 let hits = 0;
 let time = 0;
+let renderSize = 0;
+let forceResize = false;
 
 function hashKey(image, x, y, rotation){
     return Math.round(stringToInt(image) + x * WIDTH + y + rotation * 57313);
@@ -36,8 +40,9 @@ $('#startButton').click(function(){
     let name = $('#nameField').val();
     socket = io.connect('', {query: 'name='+name});
     socket.on('position', (pos) => {
-        x = Math.round(pos.x);
-        y = Math.round(pos.y);
+        x = pos.x;
+        y = pos.y;
+        bounds = pos.bounds;
     });
     socket.on('properties', (props) => {
         splinters = props.splinters;
@@ -45,6 +50,9 @@ $('#startButton').click(function(){
     });
     socket.on('scores', (scores) => {
         scoreBoard = scores;
+    });
+    socket.on('stickLost', ()=>{
+        setTimeout(()=>{forceResize = true; console.log('SHRUNK')}, 500);
     });
 
     socket.on('renderables', (r)=>{
@@ -116,10 +124,26 @@ function drawRotated(x, y, image, radians, w, h, key){
     const rotatedImage = rotateAndCache(image, radians, w, h, key);
     context.drawImage(rotatedImage, x, y);
 }
+window.onresize = (e)=>{forceResize = true;};
 let gridBKG;
 function draw(){
-    canvas.width = window.innerWidth * 2;
-    canvas.height = window.innerHeight * 2;
+    if(bounds) {
+        let maxDiff = Math.round(Math.sqrt(2) * Math.sqrt(Math.pow(bounds.max.x - bounds.min.x, 2) + Math.pow(bounds.max.y - bounds.min.y, 2)));
+        if (maxDiff > renderSize + 10 || forceResize) {
+            const ratio = window.innerHeight / window.innerWidth;
+            maxDiff += 10;
+            renderSize = maxDiff;
+            forceResize = false;
+            console.log(maxDiff);
+            if (ratio <= 1) {
+                canvas.width = Math.max(maxDiff / ratio + 100, window.innerWidth);
+                canvas.height = Math.max(canvas.width * ratio, window.innerHeight);
+            } else {
+                canvas.height = Math.max(maxDiff + 100, window.innerHeight);
+                canvas.width = Math.max(canvas.height * ratio, window.innerWidth);
+            }
+        }
+    }
     drawBKG(context);
     if(dynamics)
         dynamics.forEach((r) => {
@@ -179,29 +203,31 @@ function drawBKG(context){
     context.fillStyle = context.createPattern(gridBKG, 'repeat');
     context.save();
     context.translate(-x,-y);
-    context.fillRect(canvas.width / 2, canvas.height / 2, 10000, 10000);
+    context.fillRect(canvas.width / 2, canvas.height / 2, WIDTH, HEIGHT);
     context.restore();
     //context.drawImage(grid, sx, sy, sw, sh, dx, dy, sw, sh);
 }
 
 function drawGUI(){
-    const h = canvas.height;
-    const w = canvas.width;
-    context.fillStyle = 'rgba(0,0,0,.5)';
-    const boxHeight = 700;
-    const boxWidth = 550;
-    context.fillRect(w - boxWidth, 0, boxWidth, boxHeight);
+    guiCanvas.width = window.innerWidth;
+    guiCanvas.height = window.innerHeight;
+    const w = guiCanvas.width;
+    guiContext.fillStyle = 'rgba(0,0,0,.5)';
+    const boxHeight = 375;
+    const boxWidth = 275;
+    guiContext.clearRect(w - boxWidth, 0, boxWidth, boxHeight);
+    guiContext.fillRect(w - boxWidth, 0, boxWidth, boxHeight);
     const lineHeight = boxHeight / 10;
     const margin = 10;
     if(scoreBoard)
         scoreBoard.forEach((s, i) => {
             const name = s.name;
             const score = s.score;
-            context.fillStyle = 'gold';
-            context.font = "bold 50px Arial";
-            const textWidth = context.measureText(name + ': ').width;
-            context.fillText(name + ': ', w - boxWidth + margin, lineHeight * (i+1));
-            context.fillStyle = 'white';
-            context.fillText(score, w - boxWidth + margin + textWidth, lineHeight * (i+1));
+            guiContext.fillStyle = 'gold';
+            guiContext.font = "bold 30px Arial";
+            const textWidth = guiContext.measureText(name + ': ').width;
+            guiContext.fillText(name + ': ', w - boxWidth + margin, lineHeight * (i+1));
+            guiContext.fillStyle = 'white';
+            guiContext.fillText(score, w - boxWidth + margin + textWidth, lineHeight * (i+1));
         });
 }

@@ -29,7 +29,7 @@ app.get('/client', function(req, res){
 
 init();
 setInterval(main, 1000/30);
-setInterval(collisions, 1000/15);
+setInterval(collisions, 1000/30);
 setInterval(secondary, 1000);
 
 function init(){
@@ -41,9 +41,9 @@ function main(){
     game.players.forEach((player) => {
         let microcosm = player.microcosm;
         if (microcosm) {
-            microcosm.renderSticks(renderables);
+            const bounds = microcosm.renderSticks(renderables);
             microcosm.moveTowards(player.centerX, player.centerY, player.mouseX, player.mouseY);
-            player.socket.emit('position', {x: microcosm.getX(), y: microcosm.getY()});
+            player.socket.emit('position', {x: Math.round(microcosm.getX()), y: Math.round(microcosm.getY()), bounds: bounds});
         }
     });
     createSplinter();
