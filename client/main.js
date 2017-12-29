@@ -8,6 +8,7 @@ let images = {};
 let socket, mouseX, mouseY, lastMouseX, lastMouseY, x, y, renderables, splinters, sticks, scoreBoard, bounds;
 let statics = [];
 let dynamics = [];
+let textElements = [];
 const canvas = document.getElementById('gameCanvas');
 const guiCanvas = document.getElementById('guiCanvas');
 const context = canvas.getContext('2d');
@@ -53,6 +54,13 @@ $('#startButton').click(function(){
     });
     socket.on('stickLost', ()=>{
         setTimeout(()=>{forceResize = true; console.log('SHRUNK')}, 500);
+    });
+    socket.on('refreshStatics', (s)=>{
+        statics = s;
+    });
+
+    socket.on('textElements', (elements)=>{
+        textElements = elements;
     });
 
     socket.on('renderables', (r)=>{
@@ -155,6 +163,11 @@ function draw(){
             if(r)
                 render(r);
         });
+    if(textElements){
+        textElements.forEach((t)=>{
+            renderText(t);
+        });
+    }
 }
 
 function render(r){
@@ -230,4 +243,19 @@ function drawGUI(){
             guiContext.fillStyle = 'white';
             guiContext.fillText(score, w - boxWidth + margin + textWidth, lineHeight * (i+1));
         });
+}
+
+function renderText(textElement){
+    let xx = Math.round(textElement.x - x + canvas.width / 2);
+    let yy = Math.round(textElement.y - y + canvas.height / 2);
+    if(xx >= -200 && xx <= canvas.width + 200 && yy >= -200 && yy <= canvas.height + 200) {
+        context.fillStyle = 'white';
+        context.textAlign = 'center';
+        context.textBaseline="middle";
+        context.font = `bold ${textElement.size}px Work Sans`;
+        context.fillText(textElement.text, xx, yy);
+        context.fillStyle = 'black';
+        context.strokeWidth = 2;
+        context.strokeText(textElement.text, xx, yy)
+    }
 }

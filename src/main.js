@@ -31,6 +31,7 @@ init();
 setInterval(main, 1000/30);
 setInterval(collisions, 1000/30);
 setInterval(secondary, 1000);
+setInterval(staticRefresh, 5000);
 
 function init(){
     // Storage.deleteAll('splinter');
@@ -38,16 +39,19 @@ function init(){
 
 function main(){
     let renderables = [];
+    let textElements = [];
     game.players.forEach((player) => {
         let microcosm = player.microcosm;
         if (microcosm) {
             const bounds = microcosm.renderSticks(renderables);
             microcosm.moveTowards(player.centerX, player.centerY, player.mouseX, player.mouseY);
             player.socket.emit('position', {x: Math.round(microcosm.getX()), y: Math.round(microcosm.getY()), bounds: bounds});
+            textElements.push({text: player.name, x: Math.round(microcosm.getX()), y: Math.round(microcosm.getY()), size: 35 + microcosm.numSticks * 3});
         }
     });
     createSplinter();
     io.emit('renderables', {addedStatics: game.addedSplinters, removedStatics: game.removedSplinters, dynamics: renderables});
+    io.emit('textElements', textElements);
     game.addedSplinters = [];
     game.removedSplinters = [];
 }
@@ -79,6 +83,10 @@ function secondary(){
         player.socket.emit('properties', {splinters: player.splinters, sticks: player.sticks});
         player.socket.emit('scores', game.players.slice(0, Math.min(10, game.players.length)).map((p) => {return {name: p.name, score: p.splinters}}))
     });
+}
+
+function staticRefresh(){
+    io.emit('refreshStatics', game.splinters.map((s)=>{return new Renderable(s.x, s.y, 0, s.type)}))
 }
 
 function createSplinter(){
