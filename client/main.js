@@ -22,6 +22,7 @@ let hits = 0;
 let time = 0;
 let renderSize = 0;
 let forceResize = false;
+let timer, timer2;
 
 function hashKey(image, x, y, rotation){
     return Math.round(stringToInt(image) + x * WIDTH + y + rotation * 57313);
@@ -39,12 +40,12 @@ function stringToInt(s){
 
 $('#startButton').click(function(){
     let name = $('#nameField').val();
-    socket = io.connect('', {query: 'name='+name});
-    socket.on('position', (pos) => {
-        x = pos.x;
-        y = pos.y;
-        bounds = pos.bounds;
-    });
+    socket = io.connect('', {query: 'name='+name, forceNew: true});
+    // socket.on('position', (pos) => {
+    //     x = pos.x;
+    //     y = pos.y;
+    //     bounds = pos.bounds;
+    // });
     socket.on('properties', (props) => {
         splinters = props.splinters;
         sticks = props.sticks;
@@ -62,8 +63,8 @@ $('#startButton').click(function(){
     socket.on('textElements', (elements)=>{
         textElements = elements;
     });
-
-    socket.on('renderables', (r)=>{
+    socket.on('info', (info)=>{
+        const r = info.renderables;
         if(r.addedStatics)
             r.addedStatics.forEach((s)=>{
                 statics[s.index] = s.renderable;
@@ -73,14 +74,43 @@ $('#startButton').click(function(){
                 statics[s] = null;
             });
         dynamics = r.dynamics;
+        if(r.dynamics)
+            console.log(r.dynamics.length);
+        const pos = info.position;
+        x = pos.x;
+        y = pos.y;
+        bounds = pos.bounds;
     });
+
+    // socket.on('renderables', (r)=>{
+    //     if(r.addedStatics)
+    //         r.addedStatics.forEach((s)=>{
+    //             statics[s.index] = s.renderable;
+    //         });
+    //     if(r.removedStatics)
+    //         r.removedStatics.forEach((s)=>{
+    //             statics[s] = null;
+    //         });
+    //     dynamics = r.dynamics;
+    //     if(r.dynamics)
+    //         console.log(r.dynamics.length);
+    // });
     socket.on('dead', (s)=>{
-        window.location.reload();
+        console.log('Socket says we are dead...');
+        clearInterval(timer);
+        clearInterval(timer2);
+        textElements = [];
+        splinters = [];
+        sticks = [];
+        statics = [];
+        $('#gameTitle').show();
+        $('#startBox').show();
+        socket.disconnect();
     });
-    $('#gameTitle').remove();
-    $('#startBox').remove();
-    let timer = window.setInterval(main, 1000/30);
-    let timer2 = window.setInterval(checkPercentage, 10000);
+    $('#gameTitle').hide();
+    $('#startBox').hide();
+    timer = window.setInterval(main, 1000/30);
+    timer2 = window.setInterval(checkPercentage, 10000);
 });
 
 
@@ -97,6 +127,7 @@ function main(){
         let w = $(window).width();
         let h = $(window).height();
         socket.emit('mouse', {x: mouseX, y: mouseY, w: w, h: h});
+        socket.emit('renderBounds', {x: x - canvas.width / 2, y: y - canvas.height / 2, width: canvas.width, height: canvas.height});
     }
 }
 

@@ -154,7 +154,7 @@ class Stick {
 
     tellPlayerToShrink(){
         if(this.microcosm)
-            this.microcosm.player.socket.emit('stickLost', {});
+            this.microcosm.player.stickLost();
         else if(this.parent)
             this.parent.tellPlayerToShrink();
     }

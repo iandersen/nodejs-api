@@ -29,6 +29,8 @@ class Player {
         this.id = id++;
         this.socket = socket;
         this.sticksLeft = splinterCount;
+        this.automated = !this.socket;
+        this.bounds = {x: 0, y: 0, width: Room.getWidth(), height: Room.getHeight()};
     }
 
     static BUILD_STATE(){
@@ -60,12 +62,21 @@ class Player {
         }
     }
 
+    stickLost(){
+        if(this.socket)
+            this.socket.emit('stickLost', {});
+    }
+
     destroy(){
         this.microcosm = null;
         game.players.forEach((c, i)=> {
             if (c.id === this.id) {
-                console.log('Emitting deadness');
-                c.socket.emit('dead', {});
+                if(c.socket)
+                    c.socket.emit('dead', {});
+                else{
+                    //If it's a bot
+                    game.players.splice(i, 1);
+                }
             }
         });
     }

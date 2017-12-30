@@ -16,6 +16,7 @@ const Game = require('./gameState');
 
 const SPLINTER_LIMIT = 500;
 const game = new Game();
+const MIN_PLAYERS = 10;
 
 app.get('/', function(req, res){
     res.sendFile(path.resolve('./views/index.html'));
@@ -40,17 +41,46 @@ function init(){
 function main(){
     let renderables = [];
     let textElements = [];
-    game.players.forEach((player) => {
+    game.players.forEach((player)=>{
         let microcosm = player.microcosm;
         if (microcosm) {
-            const bounds = microcosm.renderSticks(renderables);
+            player.renderBounds = microcosm.renderSticks(renderables);
             microcosm.moveTowards(player.centerX, player.centerY, player.mouseX, player.mouseY);
-            player.socket.emit('position', {x: Math.round(microcosm.getX()), y: Math.round(microcosm.getY()), bounds: bounds});
+            if(!player.socket){
+                player.centerX = microcosm.getX();
+                player.centerY = microcosm.getY();
+                if(Math.random() * 100 < 1){
+                    player.mouseX = Math.random() * Room.getWidth();
+                    player.mouseY = Math.random() * Room.getHeight();
+                }
+            }
             textElements.push({text: player.name, x: Math.round(microcosm.getX()), y: Math.round(microcosm.getY()), size: 35 + microcosm.numSticks * 3});
         }
     });
+    game.players.forEach((player) => {
+        if(player.socket) {
+            let microcosm = player.microcosm;
+            if (microcosm) {
+                player.socket.emit('info', {
+                    renderables: {
+                        addedStatics: game.addedSplinters,
+                        removedStatics: game.removedSplinters,
+                        dynamics: renderables.filter((r) => {
+                            const m = 500;
+                            return (r.x + m >= player.bounds.x && r.x - m <= player.bounds.x + player.bounds.width) &&
+                                (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.height);
+                        })
+                    },
+                    position: {
+                        x: Math.round(microcosm.getX()),
+                        y: Math.round(microcosm.getY()),
+                        bounds: player.renderBounds
+                    }
+                });
+            }
+        }
+    });
     createSplinter();
-    io.emit('renderables', {addedStatics: game.addedSplinters, removedStatics: game.removedSplinters, dynamics: renderables});
     io.emit('textElements', textElements);
     game.addedSplinters = [];
     game.removedSplinters = [];
@@ -80,13 +110,30 @@ function secondary(){
         return c1.splinters < c2.splinters ? 1 : c1.splinters === c2.splinters ? 0 : -1;
     });
     game.players.forEach((player) => {
-        player.socket.emit('properties', {splinters: player.splinters, sticks: player.sticks});
-        player.socket.emit('scores', game.players.slice(0, Math.min(10, game.players.length)).map((p) => {return {name: p.name, score: p.splinters}}))
+        if(player.socket) {
+            player.socket.emit('properties', {splinters: player.splinters, sticks: player.sticks});
+            player.socket.emit('scores', game.players.slice(0, Math.min(10, game.players.length)).map((p) => {
+                return {name: p.name, score: p.splinters}
+            }))
+        }
     });
+    if(game.players.length < MIN_PLAYERS){
+        let player = new Player(randomName(),'fake',null);
+        game.players.push(player);
+        player.centerX = Room.getWidth() / 2;
+        player.centerY = Room.getHeight() / 2;
+        player.mouseX = Math.random() * Room.getWidth();
+        player.mouseY = Math.random() * Room.getHeight();
+    }
+}
+
+function randomName(){
+    const names = ['name1', 'name2', 'name3', 'name4', 'name5', 'name6', 'name7', 'name8', 'name9', 'name10'];
+    return names[Math.floor(Math.random() * names.length)];
 }
 
 function staticRefresh(){
-    io.emit('refreshStatics', game.splinters.map((s)=>{return new Renderable(s.x, s.y, 0, s.type)}))
+    io.emit('refreshStatics', game.splinters)
 }
 
 function createSplinter(){
@@ -113,6 +160,11 @@ io.on('connection', function(socket){
             player.centerY = pos.h / 2;
         }
     });
+    socket.on('renderBounds', (b)=>{
+        let player = getPlayer(socket);
+        if(player)
+            player.bounds = b;
+    });
     socket.on('disconnect', function(){
         logOut(socket);
     });
@@ -128,8 +180,10 @@ function logIn(socket){
 
 function getPlayer(socket){
     let id = -1;
+    if(!socket)
+        return id;
     const p = game.players.filter((u, i) => {
-        if(u.socket.id === socket.id)
+        if(u.socket && u.socket.id === socket.id)
             id = i;
         return id === i;
     });
@@ -139,7 +193,7 @@ function getPlayer(socket){
 function logOut(socket){
     let id = -1;
     game.players.filter((u, i) => {
-        if(u.socket.id === socket.id)
+        if(u.socket && u.socket.id === socket.id)
             id = i;
         return id === i;
     });
