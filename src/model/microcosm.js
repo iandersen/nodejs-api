@@ -1,7 +1,7 @@
 /**
  * Created by Ian on 12/19/2017.
  */
-const Storage = require('../storage/storage');
+// const Storage = require('../storage/storage');
 const Stick = require('./stick');
 const Room = require('./room');
 const Renderable = require('../../rendering/Renderable');

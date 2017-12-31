@@ -5,7 +5,7 @@ const io = require('socket.io')(http);
 const basicauth = require('basicauth-middleware');
 const path = require('path');
 
-const Storage = require('./storage/storage');
+// const Storage = require('./storage/storage');
 const UserConnection = require('./UserConnection');
 const Room = require('./model/room');
 const Player = require('./model/player');

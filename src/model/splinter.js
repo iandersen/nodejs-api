@@ -2,7 +2,7 @@
  * Created by Ian on 12/19/2017.
  */
 
-const Storage = require('../storage/storage');
+// const Storage = require('../storage/storage');
 const Line = require('../util/line');
 const Point = require('../util/point');
 const ColBox = require('../util/colBox');
