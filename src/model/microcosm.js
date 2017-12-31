@@ -110,7 +110,7 @@ class Microcosm {
         minY = Math.min(y, sonTipY, daughterTipY);
         maxX = Math.max(x, sonTipX, daughterTipX);
         maxY = Math.max(y, sonTipY, daughterTipY);
-        arr.push(new Renderable(x, y, dir, rootStick.parent ? 'pop' : this.type));
+        arr.push(new Renderable(x, y, dir, rootStick.parent ? 'pop' : this.type, this.speed, this.direction));
         //arr.push(new Renderable(sonTipX, sonTipY, 0, 'blip'));
         //arr.push(new Renderable(daughterTipX, daughterTipY, 0, 'blip'));
         //rootStick.updateChildren();

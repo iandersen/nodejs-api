@@ -11,12 +11,13 @@ const Room = require('./model/room');
 const Player = require('./model/player');
 const Splinter = require('./model/splinter');
 const Renderable = require('../rendering/Renderable');
+const TextRenderable = require('../rendering/TextRenderable');
 const Microcosm = require('./model/microcosm');
 const Game = require('./gameState');
 
 const SPLINTER_LIMIT = 500;
 const game = new Game();
-const MIN_PLAYERS = 10;
+const MIN_PLAYERS = 0;
 
 app.get('/', function(req, res){
     res.sendFile(path.resolve('./views/index.html'));
@@ -54,7 +55,8 @@ function main(){
                     player.mouseY = Math.random() * Room.getHeight();
                 }
             }
-            textElements.push({text: player.name, x: Math.round(microcosm.getX()), y: Math.round(microcosm.getY()), size: 35 + microcosm.numSticks * 3});
+            textElements.push(new TextRenderable(Math.round(microcosm.getX()), Math.round(microcosm.getY()), player.name,
+                35 + microcosm.numSticks * 6, microcosm.speed, microcosm.direction));
         }
     });
     game.players.forEach((player) => {
@@ -68,20 +70,27 @@ function main(){
                         dynamics: renderables.filter((r) => {
                             const m = 500;
                             return (r.x + m >= player.bounds.x && r.x - m <= player.bounds.x + player.bounds.width) &&
-                                (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.height);
+                                (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.height)
                         })
                     },
                     position: {
                         x: Math.round(microcosm.getX()),
                         y: Math.round(microcosm.getY()),
-                        bounds: player.renderBounds
-                    }
+                        bounds: player.renderBounds,
+                        s: microcosm.speed,
+                        d: microcosm.direction
+                    },
+                    textElements: textElements.filter((r)=>{
+                        const m = 500;
+                        return (r.x + m >= player.bounds.x && r.x - m <= player.bounds.x + player.bounds.width) &&
+                            (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.height)
+                    })
                 });
             }
         }
     });
     createSplinter();
-    io.emit('textElements', textElements);
+    // io.emit('textElements', textElements);
     game.addedSplinters = [];
     game.removedSplinters = [];
 }
@@ -133,7 +142,7 @@ function randomName(){
 }
 
 function staticRefresh(){
-    io.emit('refreshStatics', game.splinters)
+    //io.emit('refreshStatics', game.splinters)
 }
 
 function createSplinter(){
@@ -168,7 +177,7 @@ io.on('connection', function(socket){
     socket.on('disconnect', function(){
         logOut(socket);
     });
-    socket.emit('renderables', {addedStatics: game.splinters.map((s, i)=>{return {renderable: s, index: i}})})
+    socket.emit('refreshStatics', game.splinters);
 });
 
 function logIn(socket){
