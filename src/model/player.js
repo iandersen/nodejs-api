@@ -64,7 +64,7 @@ class Player {
 
     stickLost(){
         if(this.socket)
-            this.socket.emit('stickLost', {});
+            this.socket.emit('sL', {});
     }
 
     destroy(){

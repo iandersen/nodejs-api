@@ -159,30 +159,32 @@ class Stick {
             this.parent.tellPlayerToShrink();
     }
 
-    destroy(){
+    destroy(player){
         this.tellPlayerToShrink();
         const dir = this.rotation;
         this.backX = this.x + this.lengthDirX(Stick.getLength() / 2, dir - Math.PI);
         this.backY = this.y + this.lengthDirY(Stick.getLength() / 2, dir - Math.PI);
         const drops = 15;
         for(let i = 0; i < drops; i++){
-            let xx= this.backX + this.lengthDirX(Stick.getLength() / (i+1), dir);
-            let yy= this.backY + this.lengthDirX(Stick.getLength() / (i+1), dir);
-            const type = Splinter.randomType();
-            for(let n = game.maxSplinters; true; n++){
-                if(!game.splinters[n]){
-                    game.splinters[n] = new Splinter(xx, yy, type);
-                    game.addedSplinters.push({index: n, renderable: new Renderable(xx,yy,0,type)});
-                    break;
-                }
-            }
+            //let xx= Math.round(this.backX + this.lengthDirX(Stick.getLength() / (i+1), dir));
+            //let yy= Math.round(this.backY + this.lengthDirX(Stick.getLength() / (i+1), dir));
+            //const type = Splinter.randomType();
+            // for(let n = game.maxSplinters, i = 0; true; n++, i++){
+            //     if(!game.splinters[n]){
+            //         game.addedSplinters.push({i: n, r: new Renderable(xx,yy,0,type)});
+            //         game.splinters[n] = new Splinter(xx, yy, type);
+            //         break;
+            //     }
+            // }
+            if(player)
+                player.addSplinter();
         }
         this.subtractSplinters(30);
         this.exists = false;
         if(this.son)
-            this.son.destroy();
+            this.son.destroy(player);
         if(this.daughter)
-            this.daughter.destroy();
+            this.daughter.destroy(player);
         if(this.microcosm)//If it is the root stick
             this.microcosm.destroy();
     }

@@ -17,7 +17,7 @@ const Game = require('./gameState');
 
 const SPLINTER_LIMIT = 500;
 const game = new Game();
-const MIN_PLAYERS = 0;
+const MIN_PLAYERS = 30;
 
 app.get('/', function(req, res){
     res.sendFile(path.resolve('./views/index.html'));
@@ -31,6 +31,7 @@ app.get('/client', function(req, res){
 
 init();
 setInterval(main, 1000/30);
+setInterval(sync, 1000/20);
 setInterval(collisions, 1000/30);
 setInterval(secondary, 1000);
 setInterval(staticRefresh, 5000);
@@ -39,13 +40,70 @@ function init(){
     // Storage.deleteAll('splinter');
 }
 
-function main(){
+function sync(){
     let renderables = [];
     let textElements = [];
     game.players.forEach((player)=>{
         let microcosm = player.microcosm;
         if (microcosm) {
             player.renderBounds = microcosm.renderSticks(renderables);
+            //microcosm.moveTowards(player.centerX, player.centerY, player.mouseX, player.mouseY);
+            //if(!player.socket){
+                //player.centerX = microcosm.getX();
+                //player.centerY = microcosm.getY();
+                // if(Math.random() * 100 < 1){
+                //     player.mouseX = Math.random() * Room.getWidth();
+                //     player.mouseY = Math.random() * Room.getHeight();
+                // }
+            //}
+            textElements.push(new TextRenderable(Math.round(microcosm.getX()), Math.round(microcosm.getY()), player.name,
+                35 + microcosm.numSticks * 6, microcosm.speed, microcosm.direction));
+        }
+    });
+    game.players.forEach((player) => {
+        if(player.socket) {
+            let microcosm = player.microcosm;
+            if (microcosm) {
+                const info = {
+                    r: {
+                        aS: game.addedSplinters,
+                        rS: game.removedSplinters,
+                        d: renderables.filter((r) => {
+                            const m = 500;
+                            return (r.x + m >= player.bounds.x && r.x - m <= player.bounds.x + player.bounds.w) &&
+                                (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.h)
+                        })
+                    },
+                    p: {
+                        x: Math.round(microcosm.getX()),
+                        y: Math.round(microcosm.getY()),
+                        b: player.renderBounds,
+                        s: microcosm.speed,
+                        d: microcosm.direction
+                    },
+                    t: textElements.filter((r)=>{
+                        const m = 500;
+                        return (r.x + m >= player.bounds.x && r.x - m <= player.bounds.x + player.bounds.w) &&
+                            (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.h)
+                    })
+                };
+                player.socket.emit('info', info);
+            }
+        }
+    });
+    //createSplinter();
+    // io.emit('textElements', textElements);
+    game.addedSplinters = [];
+    game.removedSplinters = [];
+}
+
+function main(){
+    //let renderables = [];
+    //let textElements = [];
+    game.players.forEach((player)=>{
+        let microcosm = player.microcosm;
+        if (microcosm) {
+            //player.renderBounds = microcosm.renderSticks([]);
             microcosm.moveTowards(player.centerX, player.centerY, player.mouseX, player.mouseY);
             if(!player.socket){
                 player.centerX = microcosm.getX();
@@ -55,44 +113,43 @@ function main(){
                     player.mouseY = Math.random() * Room.getHeight();
                 }
             }
-            textElements.push(new TextRenderable(Math.round(microcosm.getX()), Math.round(microcosm.getY()), player.name,
-                35 + microcosm.numSticks * 6, microcosm.speed, microcosm.direction));
         }
     });
-    game.players.forEach((player) => {
-        if(player.socket) {
-            let microcosm = player.microcosm;
-            if (microcosm) {
-                player.socket.emit('info', {
-                    renderables: {
-                        addedStatics: game.addedSplinters,
-                        removedStatics: game.removedSplinters,
-                        dynamics: renderables.filter((r) => {
-                            const m = 500;
-                            return (r.x + m >= player.bounds.x && r.x - m <= player.bounds.x + player.bounds.width) &&
-                                (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.height)
-                        })
-                    },
-                    position: {
-                        x: Math.round(microcosm.getX()),
-                        y: Math.round(microcosm.getY()),
-                        bounds: player.renderBounds,
-                        s: microcosm.speed,
-                        d: microcosm.direction
-                    },
-                    textElements: textElements.filter((r)=>{
-                        const m = 500;
-                        return (r.x + m >= player.bounds.x && r.x - m <= player.bounds.x + player.bounds.width) &&
-                            (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.height)
-                    })
-                });
-            }
-        }
-    });
+    // game.players.forEach((player) => {
+    //     if(player.socket) {
+    //         let microcosm = player.microcosm;
+    //         if (microcosm) {
+    //             const info = {
+    //                 r: {
+    //                     aS: game.addedSplinters,
+    //                     rS: game.removedSplinters,
+    //                     d: renderables.filter((r) => {
+    //                         const m = 500;
+    //                         return (r.x + m >= player.bounds.x && r.x - m <= player.bounds.x + player.bounds.w) &&
+    //                             (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.h)
+    //                     })
+    //                 },
+    //                 p: {
+    //                     x: Math.round(microcosm.getX()),
+    //                     y: Math.round(microcosm.getY()),
+    //                     b: player.renderBounds,
+    //                     s: microcosm.speed,
+    //                     d: microcosm.direction
+    //                 },
+    //                 t: textElements.filter((r)=>{
+    //                     const m = 500;
+    //                     return (r.x + m >= player.bounds.x && r.x - m <= player.bounds.x + player.bounds.w) &&
+    //                         (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.h)
+    //                 })
+    //             };
+    //             player.socket.emit('info', info);
+    //         }
+    //     }
+    // });
     createSplinter();
     // io.emit('textElements', textElements);
-    game.addedSplinters = [];
-    game.removedSplinters = [];
+   // game.addedSplinters = [];
+    //game.removedSplinters = [];
 }
 
 function collisions(){
@@ -152,7 +209,7 @@ function createSplinter(){
     for(let i = 0; i < SPLINTER_LIMIT; i++){
         if(!game.splinters[i]){
             game.splinters[i] = new Splinter(x,y,type);
-            game.addedSplinters.push({index: i, renderable: new Renderable(x,y,0,type)});
+            game.addedSplinters.push({i: i, r: new Renderable(x,y,0,type)});
             break;
         }
     }
@@ -160,7 +217,7 @@ function createSplinter(){
 
 io.on('connection', function(socket){
     logIn(socket);
-    socket.on('mouse', function(pos){
+    socket.on('m', function(pos){
         let player = getPlayer(socket);
         if(player) {
             player.mouseX = pos.x;
@@ -169,15 +226,16 @@ io.on('connection', function(socket){
             player.centerY = pos.h / 2;
         }
     });
-    socket.on('renderBounds', (b)=>{
+    socket.on('r', (b)=>{
         let player = getPlayer(socket);
-        if(player)
+        if(player) {
             player.bounds = b;
+        }
     });
     socket.on('disconnect', function(){
         logOut(socket);
     });
-    socket.emit('refreshStatics', game.splinters);
+    socket.emit('rS', game.splinters.map((s)=>{if(s) return new Renderable(s.x, s.y,s.radians,s.type,0,0)}));
 });
 
 function logIn(socket){
@@ -212,4 +270,4 @@ function logOut(socket){
 }
 const server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
 const server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
-http.listen(server_port, server_ip_address, () => console.log('Listening on port 8080'));
+http.listen(server_port, () => console.log('Listening on port 8080'));

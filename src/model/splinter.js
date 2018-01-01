@@ -23,7 +23,7 @@ class Splinter {
     }
 
     static randomType(){
-        const types = ['splinter1','splinter2','splinter3','splinter4','splinter5','splinter6'];
+        const types = ['s1','s2','s3','s4','s5','s6'];
         return types[Math.floor(Math.random() * types.length)];
     }
 }
