@@ -1,8 +1,9 @@
 /**
  * Created by Ian on 12/20/2017.
  */
+
 class Renderable {
-    constructor(x, y, radians, type, speed, direction){
+    constructor(x, y, radians, type, speed, direction, id){
         this.x = Math.round(x);
         this.y = Math.round(y);
         if(radians !== 0)
@@ -13,6 +14,7 @@ class Renderable {
             this.s = Math.round(this.s * 100) / 100;
             this.d = direction || 0;
         }
+        this.i = id || 0;
     }
 }
 

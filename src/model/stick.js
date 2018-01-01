@@ -10,6 +10,7 @@ const Game = require('../gameState');
 const Splinter = require('./splinter');
 const game = new Game();
 const Renderable = require('../../rendering/Renderable');
+let id = 0;
 
 class Stick {
     constructor(parent){
@@ -28,6 +29,7 @@ class Stick {
         this.hitBox = null;
         this.exists = true;
         this.microcosm = null;
+        this.id = id++;
     }
 
     static getLength(){

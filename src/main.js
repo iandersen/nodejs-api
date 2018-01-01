@@ -31,7 +31,7 @@ app.get('/client', function(req, res){
 
 init();
 setInterval(main, 1000/30);
-setInterval(sync, 1000/20);
+setInterval(sync, 1000/10);
 setInterval(collisions, 1000/30);
 setInterval(secondary, 1000);
 setInterval(staticRefresh, 5000);
@@ -47,15 +47,6 @@ function sync(){
         let microcosm = player.microcosm;
         if (microcosm) {
             player.renderBounds = microcosm.renderSticks(renderables);
-            //microcosm.moveTowards(player.centerX, player.centerY, player.mouseX, player.mouseY);
-            //if(!player.socket){
-                //player.centerX = microcosm.getX();
-                //player.centerY = microcosm.getY();
-                // if(Math.random() * 100 < 1){
-                //     player.mouseX = Math.random() * Room.getWidth();
-                //     player.mouseY = Math.random() * Room.getHeight();
-                // }
-            //}
             textElements.push(new TextRenderable(Math.round(microcosm.getX()), Math.round(microcosm.getY()), player.name,
                 35 + microcosm.numSticks * 6, microcosm.speed, microcosm.direction));
         }
@@ -91,21 +82,16 @@ function sync(){
             }
         }
     });
-    //createSplinter();
-    // io.emit('textElements', textElements);
     game.addedSplinters = [];
     game.removedSplinters = [];
 }
 
 function main(){
-    //let renderables = [];
-    //let textElements = [];
     game.players.forEach((player)=>{
         let microcosm = player.microcosm;
         if (microcosm) {
-            //player.renderBounds = microcosm.renderSticks([]);
             microcosm.moveTowards(player.centerX, player.centerY, player.mouseX, player.mouseY);
-            if(!player.socket){
+            if(!player.socket){//bots
                 player.centerX = microcosm.getX();
                 player.centerY = microcosm.getY();
                 if(Math.random() * 100 < 1){
@@ -115,41 +101,7 @@ function main(){
             }
         }
     });
-    // game.players.forEach((player) => {
-    //     if(player.socket) {
-    //         let microcosm = player.microcosm;
-    //         if (microcosm) {
-    //             const info = {
-    //                 r: {
-    //                     aS: game.addedSplinters,
-    //                     rS: game.removedSplinters,
-    //                     d: renderables.filter((r) => {
-    //                         const m = 500;
-    //                         return (r.x + m >= player.bounds.x && r.x - m <= player.bounds.x + player.bounds.w) &&
-    //                             (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.h)
-    //                     })
-    //                 },
-    //                 p: {
-    //                     x: Math.round(microcosm.getX()),
-    //                     y: Math.round(microcosm.getY()),
-    //                     b: player.renderBounds,
-    //                     s: microcosm.speed,
-    //                     d: microcosm.direction
-    //                 },
-    //                 t: textElements.filter((r)=>{
-    //                     const m = 500;
-    //                     return (r.x + m >= player.bounds.x && r.x - m <= player.bounds.x + player.bounds.w) &&
-    //                         (r.y + m >= player.bounds.y && r.y - m <= player.bounds.y + player.bounds.h)
-    //                 })
-    //             };
-    //             player.socket.emit('info', info);
-    //         }
-    //     }
-    // });
     createSplinter();
-    // io.emit('textElements', textElements);
-   // game.addedSplinters = [];
-    //game.removedSplinters = [];
 }
 
 function collisions(){
@@ -209,7 +161,7 @@ function createSplinter(){
     for(let i = 0; i < SPLINTER_LIMIT; i++){
         if(!game.splinters[i]){
             game.splinters[i] = new Splinter(x,y,type);
-            game.addedSplinters.push({i: i, r: new Renderable(x,y,0,type)});
+            game.addedSplinters.push({i: i, r: new Renderable(x,y,0,type,0,0)});
             break;
         }
     }
