@@ -23,10 +23,25 @@ class Microcosm {
         this.stick = new Stick(null);
         this.type = Microcosm.randomType();
         this.id = id++;
+        if(id > 9999)
+            id = 0;
         this.stick.microcosmID = this.id;
         this.stick.microcosm = this;
         this.speed = 9;
         this.numSticks = 1;
+        this.notifiedPlayers = [];
+    }
+
+    updated(){
+        this.notifiedPlayers = [];
+    }
+
+    setPlayerNotified(playerID){
+        this.notifiedPlayers[playerID] = true;
+    }
+
+    isPlayerNotified(playerID){
+        return !!this.notifiedPlayers[playerID];
     }
 
     getX(){
@@ -50,11 +65,12 @@ class Microcosm {
             let x = this.x;
             let y = this.y;
             let dir = this.direction;
-            return Microcosm.renderStickTree(this.stick, x, y, dir, arr, this.speed, this.type, dir);
+            return Microcosm.renderStickTree(this.stick, x, y, dir, arr, this.type);
         }
     }
 
     addStickToFirstAvailable(){
+        this.updated();
         let sonCount = 0;
         let daughterCount = 0;
         let s = this.stick;
@@ -87,7 +103,6 @@ class Microcosm {
         }
         newStick.getColBox();
         parentStick.getColBox();
-        game.addedSticks.push(new AddedStick(this.id,newStick.angle,count))
     }
 
     subtractSplinters(num){
@@ -96,17 +111,18 @@ class Microcosm {
     }
 
     //Returns bounds
-    static renderStickTree(rootStick, x, y, dir, arr, speed, type, microcosmDirection){
-        if(!rootStick.exists)
+    static renderStickTree(rootStick, x, y, dir, arr, type){
+        if(!rootStick)
             return;
         //Tell the stick where it is
         let minX, minY, maxX, maxY;
         let son = rootStick.son || rootStick.s;
-        let sonAngle = son ? son.angle || son.a : 0;
-        let daughter = rootStick.daughter || rootStick.d;
-        let daughterAngle = daughter ? daughter.angle || daughter.a : 0;
-        let parent = rootStick.parent || rootStick.p;
-        rootStick.updatePosition(x,y,dir);
+        let sonAngle = son ? son.angle : 0;
+        let daughter = rootStick.daughter;
+        let daughterAngle = daughter ? daughter.angle : 0;
+        let parent = rootStick.parent;
+        if(rootStick.updatePosition)
+            rootStick.updatePosition(x,y,dir);
         let sonTipX = x + Microcosm.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir);
         let sonTipY = y + Microcosm.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir);
         let daughterTipX = x + Microcosm.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
@@ -115,7 +131,7 @@ class Microcosm {
         minY = Math.min(y, sonTipY, daughterTipY);
         maxX = Math.max(x, sonTipX, daughterTipX);
         maxY = Math.max(y, sonTipY, daughterTipY);
-        arr.push(new Renderable(x, y, Math.round(1000 * dir)/1000, parent ? 'pop' : type, speed, Math.round(1000 * microcosmDirection)/1000,rootStick.id || rootStick.p));
+        arr.push(new Renderable(x, y, Math.round(1000 * dir)/1000, parent ? 'pop' : type, 0, 0,rootStick.id || rootStick.p));
         let childBounds = {min: new Point(9999999, 9999999), max: new Point(-9999999, -999999)};
         if(son){
             let sonDir = sonAngle + dir;
@@ -214,7 +230,6 @@ class Microcosm {
     }
 
     destroy(){
-        game.removedMicrocosms.push(new RemovedMicrocosm(this.id));
         if(this.player){
             this.player.destroy();
         }
@@ -222,8 +237,14 @@ class Microcosm {
 
     serialize(){
         return{
+            i: this.id,
+            t: this.type,
             s: this.stick ? this.stick.serialize(0) : null
         }
+    }
+
+    serializePosition(){
+        return {i: this.id, x: Math.round(this.x), y: Math.round(this.y), d: Math.round(this.direction * 1000) / 1000, s: Math.round(this.speed * 100) / 100, n: this.player.name, st: this.numSticks, t: this.type}
     }
 }
 

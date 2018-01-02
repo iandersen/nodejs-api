@@ -27,6 +27,8 @@ class Player {
         this.sticks = 1;
         this.state = MOVE_STATE;
         this.id = id++;
+        if(id > 9999)
+            id = 0;
         this.socket = socket;
         this.sticksLeft = splinterCount;
         this.automated = !this.socket;

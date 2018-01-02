@@ -10,10 +10,6 @@ class GameState {
             this.splinters = [];
             this.addedSplinters = [];
             this.removedSplinters = [];
-            this.addedSticks = [];
-            this.removedSticks = [];
-            this.addedMicrocosms = [];
-            this.removedMicrocosms = [];
             this.maxSplinters = 500;
             instance = this;
         }

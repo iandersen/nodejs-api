@@ -4,6 +4,7 @@ import $ from 'jquery';
 require('../sass/main.scss');
 const types = require('../rendering/types');
 const Microcosm = require('../src/model/microcosm');
+const ClientMicrocosm = require('./Microcosm');
 const Stick = require('../src/model/stick');
 let images = {};
 
@@ -30,10 +31,10 @@ let buffer = [];
 const BUFFER_SIZE = 6;
 let renderTimer;
 let renderSpeed = 1000/30;
-let socketSpeed = 1000/10;
+let socketSpeed = 1000/5;
 let lastSocketTime = performance.now();
 let lastRenderTime = performance.now();
-const DELAY_TIME = 300;
+const DELAY_TIME = 600;
 
 $('#startButton').click(function(){
     let name = $('#nameField').val();
@@ -53,6 +54,9 @@ $('#startButton').click(function(){
         statics = s;
     });
     socket.on('info', (info)=>{
+        drawGUI();
+        let bufferMicrocosms = [];
+        let bufferMicrocosmPositions = [];
         const r = info.r;
         //Added Splinters
         if(r.aS)
@@ -64,105 +68,23 @@ $('#startButton').click(function(){
             r.rS.forEach((s)=>{
                 statics[s] = null;
             });
-        //Added Microcosms
-        if(r.aM)
-            r.aM.forEach((m)=>{
-                microcosms.push(m);
+        //Microcosms
+        if(r.m){
+            r.m.forEach((m)=>{
+                const id = m.i;
+                bufferMicrocosms[id] = ClientMicrocosm.deserialize(m);
             });
-        //Removed Microcosms
-        if(r.rM)
-            r.rM.forEach((m)=>{
-                microcosms.forEach((n, i)=>{
-                    if(n.i === m.i)
-                        microcosms.splice(i, 1);
-                });
-            });
-        //Added Sticks
-        if(r.aT)
-            r.aT.sort((a, b)=>{return a.i - b.i}).forEach((s)=>{
-                const microcosmID = s.m;
-                let microcosm = null;
-                microcosms.forEach((m)=>{
-                    if(m.i === microcosmID)
-                        microcosm = m;
-                });
-                if(!microcosm)
-                    console.log('ERROR! Microcosm with id: ', s.m + ' was not found!!! Trying to add a stick at position: ', s.i);
-                else{
-                    let i = s.i;
-                    let stick = microcosm.s;
-                    if(i % 2 === 1){//If it is a son
-                        while(i > 1){
-                            stick = stick.s;
-                            i -= 2;
-                        }
-                        if(stick) {
-                            stick.s = s;
-                            s.parent = stick;
-                        }else
-                            console.log('STICK NOT FOUND! i: ' + s.i)
-                    }else{//If it is a daughter
-                        while(i > 0){
-                            stick = stick.d;
-                            i -= 2;
-                        }
-                        if(stick) {
-                            stick.d = s;
-                            s.parent = stick;
-                        }
-                        else
-                            console.log('STICK NOT FOUND! i: ' + s.i)
-                    }
-                }
-            });
-        //Removed Sticks
-        if(r.rT)
-            r.rT.sort((a, b)=>{return b.i - a.i}).forEach((s)=>{
-                const microcosmID = s.m;
-                let microcosm = null;
-                microcosms.forEach((m)=>{
-                    if(m.i === microcosmID)
-                        microcosm = m;
-                });
-                if(!microcosm)
-                    console.log('ERROR! Microcosm with id: ', s.m + ' was not found!!! Trying to add a stick at position: ', s.i);
-                else{
-                    const sex = i % 2 === 1 ? 'male' : 'female';
-                    let i = s.i - 2;
-                    let parent = microcosm.s;
-                    if(i % 2 === 1){//If it is a son
-                        while(i > 1){
-                            parent = parent.s;
-                            i -= 2;
-                        }
-                    }else{//If it is a daughter
-                        while(i > 0){
-                            parent = parent.d;
-                            i -= 2;
-                        }
-                    }
-                    if(parent) {
-                        if (sex === 'male')
-                            parent.s = null;
-                        else
-                            parent.d = null;
-                    }else{
-                        console.log('Parent not found! i: ' + s.i);
-                    }
-                }
-            });
+        }
         //Microcosm positions
-        if(r.m)
-            microcosms = r.m;
-        //dynamics = r.d;
-        buffer.push({time: performance.now(), microcosms: microcosms, pos: info.p});
+        if(r.mP){
+            r.mP.forEach((m)=>{
+                const id = m.i;
+                bufferMicrocosmPositions[id] = m;
+            });
+        }
+        buffer.push({time: performance.now(), microcosms: bufferMicrocosms, pos: info.p, microcosmPositions: bufferMicrocosmPositions});
         socketSpeed = performance.now() - lastSocketTime;
         lastSocketTime = performance.now();
-        // const pos = info.p;
-        // x = pos.x;
-        // y = pos.y;
-        // ps = pos.s;
-        // pd = pos.d;
         bounds = info.p.b;
         main();
         if(timer)
@@ -204,17 +126,24 @@ function renderScreen(){
             const b = buffer[i];
             const t = b.time;
             if (now - t <= DELAY_TIME) {
-                //console.log(i, now-t);
-                const percentage = renderSpeed / 100;
-                if(!buffer[i + 1] || !buffer[i+1].microcosms) {
-                    b.microcosms.forEach((d) => {
+                if(b.microcosms.length > 0){
+                    b.microcosms.forEach((m, i)=>{
+                        if(m) {
+                            microcosms[i] = m;
+                        }
+                    });
+                }
+                const percentage = renderSpeed / socketSpeed;
+                //If we are at the last frame in the buffer, we will need to extrapolate
+                if(!buffer[i + 1] || !buffer[i+1].microcosmPositions) {
+                    b.microcosmPositions.forEach((d) => {
                         d.x += Math.cos(d.d) * d.s * percentage;
                         d.y += Math.sin(d.d) * d.s * percentage;
                     });
-                    renderMicrocosms = b.microcosms.map((d)=> {
-                        return {x: d.x, y: d.y, r: d.r, s: d.s, t: d.t, d: d.d};
+                    renderMicrocosms = b.microcosmPositions.map((d)=> {
+                        return {x: d.x, y: d.y, r: d.d, s: d.s, t: d.t, d: d.d};
                     });
-                    textElements = b.microcosms.map((t)=>{
+                    textElements = b.microcosmPositions.map((t)=>{
                         return {x: t.x, y: t.y, t: t.n, z: t.st * 5 + 30, s: t.s, d: t.d};
                     });
                     const pos = b.pos;
@@ -226,51 +155,32 @@ function renderScreen(){
                     y += Math.sin(pd) * ps;
                     x = Math.min(WIDTH, Math.max(x, 0));
                     y = Math.min(HEIGHT, Math.max(y, 0));
-                }else{
-                    const d = b.microcosms.sort((a,b)=>{return a.i - b.i});
-                    const nd = buffer[i+1].microcosms.sort((a,b)=>{return a.i - b.i});
+                }else{//We need to interpolate between two buffer frames
+                    const d = b.microcosmPositions;
+                    const nd = buffer[i+1].microcosmPositions;
                     for(let n = 0; n < d.length; n++){
                         let r = d[n];
                         let nr = nd[n];
-                        if(!nr || r.i !== nr.i)
-                            renderMicrocosms[n] = r;
-                        else {
-                            let dR = nr.r - r.r;
+                        if(r && nr){
+                            let dR = nr.d - r.d;
                             if(dR > Math.PI){
                                 dR = 2 * Math.PI - dR;
                             }
                             if(dR < -Math.PI){
                                 dR = 2 * Math.PI + dR;
                             }
-                            const newR = r.r + percentage * dR;
+                            const newR = r.d + percentage * dR;
                             const dS = nr.s - r.s;
                             const newS = nr.s + percentage * dS;
                             const dX = nr.x - r.x;
                             const newX = nr.x + percentage * dX;
                             const dY = nr.y - r.y;
                             const newY = nr.y + percentage * dY;
-                            renderMicrocosms[n] = {x: newX, y: newY, s: newS, r: newR, t: r.t, d: r.d};
+                            const storedMicrocosm = microcosms[n];
+                            if(storedMicrocosm)
+                                renderMicrocosms[n] = {x: newX, y: newY, type: storedMicrocosm.type, direction: newR, microcosm: storedMicrocosm};
                         }
                     }
-                    // const t = b.textElements;
-                    // const nt = buffer[i+1].textElements;
-                    // for(let n = 0; n < t.length; n++){
-                    //     let r = t[n];
-                    //     let nr = nt[n];
-                    //     if(!nr || r.i !== nr.i)
-                    //         textElements[n] = r;
-                    //     else {
-                    //         const dR = nr.r - r.r;
-                    //         const newR = r.r + percentage * dR;
-                    //         const dS = nr.s - r.s;
-                    //         const newS = nr.s + percentage * dS;
-                    //         const dX = nr.x - r.x;
-                    //         const newX = nr.x + percentage * dX;
-                    //         const dY = nr.y - r.y;
-                    //         const newY = nr.y + percentage * dY;
-                    //         textElements[n] = {x: newX, y: newY, s: newS, r: newR, t: r.t, d: r.d, z: r.z};
-                    //     }
-                    // }
                     const pos = b.pos;
                     const nPos = buffer[i+1].pos;
                     const dX = nPos.x - pos.x;
@@ -365,7 +275,7 @@ function draw(){
     if(renderMicrocosms)
         renderMicrocosms.forEach((m) => {
             if(m)
-                renderMicrocosm(m);
+                renderMicrocosm(m.x, m.y, m.direction, m.type, m.microcosm);
         });
     if(dynamics)
         dynamics.forEach((r) => {
@@ -402,8 +312,8 @@ function renderObject(r){
     }
 }
 
-function renderMicrocosm(m){
-    Microcosm.renderStickTree(m.s,m.x,m.y,m.d,dynamics,m.s,m.t,m.d);
+function renderMicrocosm(x, y, direction, type, microcosm){
+    Microcosm.renderStickTree(microcosm.stick,x,y,direction,dynamics,type);
 }
 
 function drawBKG(context){

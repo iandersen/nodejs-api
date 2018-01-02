@@ -199,7 +199,10 @@ class Stick {
     }
 
     propagateDestruction(){
-        game.removedSticks.push(new RemovedStick(this.microcosmID,this.index));
+        if(this.microcosm)
+            this.microcosm.updated();
+        else if(this.parent)
+            this.parent.propagateDestruction();
     }
 
     serialize(i){
