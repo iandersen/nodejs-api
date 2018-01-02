@@ -5,7 +5,11 @@
 const Stick = require('./stick');
 const Room = require('./room');
 const Renderable = require('../../rendering/Renderable');
+const AddedStick = require('../../rendering/AddedStick');
+const RemovedMicrocosm = require('../../rendering/RemovedMicrocosm');
 const Point = require('../util/point');
+const Game = require('../gameState');
+const game = new Game();
 
 const speed = 9;
 const rotationSpeed = Math.PI / 30;
@@ -46,7 +50,7 @@ class Microcosm {
             let x = this.x;
             let y = this.y;
             let dir = this.direction;
-            return this.renderStickTree(this.stick, x, y, dir, arr);
+            return Microcosm.renderStickTree(this.stick, x, y, dir, arr, this.speed, this.type, dir);
         }
     }
 
@@ -69,25 +73,21 @@ class Microcosm {
         }while(s);
         let newStick;
         let parentStick;
-        let reverseAngle = false;
+        let count = 0;
         if(sonCount <= daughterCount){
-            sonStick.son = new Stick(sonStick);
+            count = sonCount * 2  - 1;
+            sonStick.son = new Stick(sonStick, count);
             newStick = sonStick.son;
             parentStick = sonStick;
         }else{
-            daughterStick.daughter = new Stick(daughterStick);
+            count = daughterCount * 2;
+            daughterStick.daughter = new Stick(daughterStick, count);
             newStick = daughterStick.daughter;
             parentStick = daughterStick;
-            reverseAngle = true;
         }
-        const angles = [45,90,90,90,110,120,130,145,160,160,160,160,160,170,170,170,170,170,190,190,190,190,190,200,200,200,200,200,225,230,240,250,270,270,270,280,315];
-        let angle = angles[Math.floor(Math.random() * angles.length)] / 180 * Math.PI;
-        if(reverseAngle)
-            angle = angle - Math.PI;
-        newStick.angle = angle;
-        newStick.rotation = angle;
         newStick.getColBox();
         parentStick.getColBox();
+        game.addedSticks.push(new AddedStick(this.id,newStick.angle,count))
     }
 
     subtractSplinters(num){
@@ -96,46 +96,42 @@ class Microcosm {
     }
 
     //Returns bounds
-    renderStickTree(rootStick, x, y, dir, arr){
+    static renderStickTree(rootStick, x, y, dir, arr, speed, type, microcosmDirection){
         if(!rootStick.exists)
             return;
         //Tell the stick where it is
         let minX, minY, maxX, maxY;
+        let son = rootStick.son || rootStick.s;
+        let sonAngle = son ? son.angle || son.a : 0;
+        let daughter = rootStick.daughter || rootStick.d;
+        let daughterAngle = daughter ? daughter.angle || daughter.a : 0;
+        let parent = rootStick.parent || rootStick.p;
         rootStick.updatePosition(x,y,dir);
-        let sonTipX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir);
-        let sonTipY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir);
-        let daughterTipX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
-        let daughterTipY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
+        let sonTipX = x + Microcosm.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir);
+        let sonTipY = y + Microcosm.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir);
+        let daughterTipX = x + Microcosm.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
+        let daughterTipY = y + Microcosm.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir - Math.PI);
         minX = Math.min(x, sonTipX, daughterTipX);
         minY = Math.min(y, sonTipY, daughterTipY);
         maxX = Math.max(x, sonTipX, daughterTipX);
         maxY = Math.max(y, sonTipY, daughterTipY);
-        arr.push(new Renderable(x, y, Math.round(1000 * dir)/1000, rootStick.parent ? 'pop' : this.type, this.speed, Math.round(1000 * this.direction)/1000,rootStick.id));
-        //arr.push(new Renderable(sonTipX, sonTipY, 0, 'blip'));
-        //arr.push(new Renderable(daughterTipX, daughterTipY, 0, 'blip'));
-        //rootStick.updateChildren();
-        if(rootStick.son && !rootStick.son.exists)
-            rootStick.son = null;
-        if(rootStick.daughter && !rootStick.daughter.exists)
-            rootStick.daughter = null;
+        arr.push(new Renderable(x, y, Math.round(1000 * dir)/1000, parent ? 'pop' : type, speed, Math.round(1000 * microcosmDirection)/1000,rootStick.id || rootStick.p));
         let childBounds = {min: new Point(9999999, 9999999), max: new Point(-9999999, -999999)};
-        if(rootStick.son){
-            let sonDir = rootStick.son.angle + dir;
-            let anchorX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir);
-            let anchorY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir);
-            //arr.push(new Renderable(anchorX, anchorY, dir, 'blip'));
-            let centerX = anchorX + this.lengthDirX(Stick.getLength() / 2, sonDir);
-            let centerY = anchorY + this.lengthDirY(Stick.getLength() / 2, sonDir);
-            childBounds = this.renderStickTree(rootStick.son, centerX, centerY, sonDir, arr);
+        if(son){
+            let sonDir = sonAngle + dir;
+            let anchorX = x + Microcosm.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), dir);
+            let anchorY = y + Microcosm.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), dir);
+            let centerX = anchorX + Microcosm.lengthDirX(Stick.getLength() / 2, sonDir);
+            let centerY = anchorY + Microcosm.lengthDirY(Stick.getLength() / 2, sonDir);
+            childBounds = Microcosm.renderStickTree(son, centerX, centerY, sonDir, arr);
         }
-        if(rootStick.daughter){
-            let daughterDir = rootStick.daughter.angle + dir;
-            let anchorX = x + this.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), rootStick.parent ? dir : dir - Math.PI);
-            let anchorY = y + this.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), rootStick.parent ? dir : dir - Math.PI);
-            //arr.push(new Renderable(anchorX, anchorY, dir, 'blip'));
-            let centerX = anchorX + this.lengthDirX(Stick.getLength() / 2, daughterDir);
-            let centerY = anchorY + this.lengthDirY(Stick.getLength() / 2, daughterDir);
-            childBounds = this.renderStickTree(rootStick.daughter, centerX, centerY, daughterDir, arr);
+        if(daughter){
+            let daughterDir = daughterAngle + dir;
+            let anchorX = x + Microcosm.lengthDirX(Stick.getLength() / 2 - Stick.getTipSize(), parent ? dir : dir - Math.PI);
+            let anchorY = y + Microcosm.lengthDirY(Stick.getLength() / 2 - Stick.getTipSize(), parent ? dir : dir - Math.PI);
+            let centerX = anchorX + Microcosm.lengthDirX(Stick.getLength() / 2, daughterDir);
+            let centerY = anchorY + Microcosm.lengthDirY(Stick.getLength() / 2, daughterDir);
+            childBounds = Microcosm.renderStickTree(daughter, centerX, centerY, daughterDir, arr);
         }
         minX = Math.min(minX, childBounds.min.x);
         minY = Math.min(minY, childBounds.min.y);
@@ -144,11 +140,11 @@ class Microcosm {
         return {min: new Point(Math.round(minX), Math.round(minY)), max: new Point(Math.round(maxX), Math.round(maxY))};
     }
 
-    lengthDirX(len, dir){
+    static lengthDirX(len, dir){
         return Math.cos(dir) * len;
     }
 
-    lengthDirY(len, dir){
+    static lengthDirY(len, dir){
         return Math.sin(dir) * len;
     }
 
@@ -175,6 +171,7 @@ class Microcosm {
         mySticks.forEach((s) => {
             enemySticks.forEach((es) => {
                 if(s.tip1Box.isCollided(es.hitBox) || s.tip2Box.isCollided(es.hitBox)){
+                    es.propagateDestruction();
                     es.destroy(this.player);
                 }
             });
@@ -217,9 +214,15 @@ class Microcosm {
     }
 
     destroy(){
-        console.log('Microcosm DESTROYED');
+        game.removedMicrocosms.push(new RemovedMicrocosm(this.id));
         if(this.player){
             this.player.destroy();
+        }
+    }
+
+    serialize(){
+        return{
+            s: this.stick ? this.stick.serialize(0) : null
         }
     }
 }

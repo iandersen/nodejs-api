@@ -3,11 +3,15 @@
 import $ from 'jquery';
 require('../sass/main.scss');
 const types = require('../rendering/types');
+const Microcosm = require('../src/model/microcosm');
+const Stick = require('../src/model/stick');
 let images = {};
 
 let socket, mouseX, mouseY, lastMouseX, lastMouseY, x, y, splinters, sticks, scoreBoard, bounds;
 let statics = [];
 let dynamics = [];
+let microcosms = [];
+let renderMicrocosms = [];
 let pd = 0;
 let ps = 0;
 let textElements = [];
@@ -49,18 +53,109 @@ $('#startButton').click(function(){
         statics = s;
     });
     socket.on('info', (info)=>{
-        textElements = info.t;
         const r = info.r;
+        //Added Splinters
         if(r.aS)
             r.aS.forEach((s)=>{
                 statics[s.i] = s.r;
             });
+        //Removed Splinters
         if(r.rS)
             r.rS.forEach((s)=>{
                 statics[s] = null;
             });
+        //Added Microcosms
+        if(r.aM)
+            r.aM.forEach((m)=>{
+                microcosms.push(m);
+            });
+        //Removed Microcosms
+        if(r.rM)
+            r.rM.forEach((m)=>{
+                microcosms.forEach((n, i)=>{
+                    if(n.i === m.i)
+                        microcosms.splice(i, 1);
+                });
+            });
+        //Added Sticks
+        if(r.aT)
+            r.aT.sort((a, b)=>{return a.i - b.i}).forEach((s)=>{
+                const microcosmID = s.m;
+                let microcosm = null;
+                microcosms.forEach((m)=>{
+                    if(m.i === microcosmID)
+                        microcosm = m;
+                });
+                if(!microcosm)
+                    console.log('ERROR! Microcosm with id: ', s.m + ' was not found!!! Trying to add a stick at position: ', s.i);
+                else{
+                    let i = s.i;
+                    let stick = microcosm.s;
+                    if(i % 2 === 1){//If it is a son
+                        while(i > 1){
+                            stick = stick.s;
+                            i -= 2;
+                        }
+                        if(stick) {
+                            stick.s = s;
+                            s.parent = stick;
+                        }else
+                            console.log('STICK NOT FOUND! i: ' + s.i)
+                    }else{//If it is a daughter
+                        while(i > 0){
+                            stick = stick.d;
+                            i -= 2;
+                        }
+                        if(stick) {
+                            stick.d = s;
+                            s.parent = stick;
+                        }
+                        else
+                            console.log('STICK NOT FOUND! i: ' + s.i)
+                    }
+                }
+            });
+        //Removed Sticks
+        if(r.rT)
+            r.rT.sort((a, b)=>{return b.i - a.i}).forEach((s)=>{
+                const microcosmID = s.m;
+                let microcosm = null;
+                microcosms.forEach((m)=>{
+                    if(m.i === microcosmID)
+                        microcosm = m;
+                });
+                if(!microcosm)
+                    console.log('ERROR! Microcosm with id: ', s.m + ' was not found!!! Trying to add a stick at position: ', s.i);
+                else{
+                    const sex = i % 2 === 1 ? 'male' : 'female';
+                    let i = s.i - 2;
+                    let parent = microcosm.s;
+                    if(i % 2 === 1){//If it is a son
+                        while(i > 1){
+                            parent = parent.s;
+                            i -= 2;
+                        }
+                    }else{//If it is a daughter
+                        while(i > 0){
+                            parent = parent.d;
+                            i -= 2;
+                        }
+                    }
+                    if(parent) {
+                        if (sex === 'male')
+                            parent.s = null;
+                        else
+                            parent.d = null;
+                    }else{
+                        console.log('Parent not found! i: ' + s.i);
+                    }
+                }
+            });
+        //Microcosm positions
+        if(r.m)
+            microcosms = r.m;
         //dynamics = r.d;
-        buffer.push({time: performance.now(), dynamics: r.d, textElements: info.t, pos: info.p});
+        buffer.push({time: performance.now(), microcosms: microcosms, pos: info.p});
         socketSpeed = performance.now() - lastSocketTime;
         lastSocketTime = performance.now();
         // const pos = info.p;
@@ -97,7 +192,7 @@ $('#startButton').click(function(){
 });
 
 function renderScreen(){
-    dynamics = [];
+    renderMicrocosms = [];
     textElements = [];
     renderSpeed = performance.now() - lastSocketTime;
     lastRenderTime = performance.now();
@@ -111,20 +206,16 @@ function renderScreen(){
             if (now - t <= DELAY_TIME) {
                 //console.log(i, now-t);
                 const percentage = renderSpeed / 100;
-                if(!buffer[i + 1] || !buffer[i+1].dynamics) {
-                    b.dynamics.forEach((d) => {
+                if(!buffer[i + 1] || !buffer[i+1].microcosms) {
+                    b.microcosms.forEach((d) => {
                         d.x += Math.cos(d.d) * d.s * percentage;
                         d.y += Math.sin(d.d) * d.s * percentage;
                     });
-                    b.textElements.forEach((t) => {
-                        t.x += Math.cos(t.d) * t.s * percentage;
-                        t.y += Math.sin(t.d) * t.s * percentage;
-                    });
-                    dynamics = b.dynamics.map((d)=> {
+                    renderMicrocosms = b.microcosms.map((d)=> {
                         return {x: d.x, y: d.y, r: d.r, s: d.s, t: d.t, d: d.d};
                     });
-                    textElements = b.textElements.map((t)=>{
-                        return {x: t.x, y: t.y, t: t.t, z: t.z, s: t.s, d: t.d};
+                    textElements = b.microcosms.map((t)=>{
+                        return {x: t.x, y: t.y, t: t.n, z: t.st * 5 + 30, s: t.s, d: t.d};
                     });
                     const pos = b.pos;
                     pd = pos.d;
@@ -136,13 +227,13 @@ function renderScreen(){
                     x = Math.min(WIDTH, Math.max(x, 0));
                     y = Math.min(HEIGHT, Math.max(y, 0));
                 }else{
-                    const d = b.dynamics.sort((a,b)=>{return a.i - b.i});
-                    const nd = buffer[i+1].dynamics.sort((a,b)=>{return a.i - b.i});
+                    const d = b.microcosms.sort((a,b)=>{return a.i - b.i});
+                    const nd = buffer[i+1].microcosms.sort((a,b)=>{return a.i - b.i});
                     for(let n = 0; n < d.length; n++){
                         let r = d[n];
                         let nr = nd[n];
                         if(!nr || r.i !== nr.i)
-                            dynamics[n] = r;
+                            renderMicrocosms[n] = r;
                         else {
                             let dR = nr.r - r.r;
                             if(dR > Math.PI){
@@ -158,28 +249,28 @@ function renderScreen(){
                             const newX = nr.x + percentage * dX;
                             const dY = nr.y - r.y;
                             const newY = nr.y + percentage * dY;
-                            dynamics[n] = {x: newX, y: newY, s: newS, r: newR, t: r.t, d: r.d};
+                            renderMicrocosms[n] = {x: newX, y: newY, s: newS, r: newR, t: r.t, d: r.d};
                         }
                     }
-                    const t = b.textElements;
-                    const nt = buffer[i+1].textElements;
-                    for(let n = 0; n < t.length; n++){
-                        let r = t[n];
-                        let nr = nt[n];
-                        if(!nr || r.i !== nr.i)
-                            textElements[n] = r;
-                        else {
-                            const dR = nr.r - r.r;
-                            const newR = r.r + percentage * dR;
-                            const dS = nr.s - r.s;
-                            const newS = nr.s + percentage * dS;
-                            const dX = nr.x - r.x;
-                            const newX = nr.x + percentage * dX;
-                            const dY = nr.y - r.y;
-                            const newY = nr.y + percentage * dY;
-                            textElements[n] = {x: newX, y: newY, s: newS, r: newR, t: r.t, d: r.d, z: r.z};
-                        }
-                    }
+                    // const t = b.textElements;
+                    // const nt = buffer[i+1].textElements;
+                    // for(let n = 0; n < t.length; n++){
+                    //     let r = t[n];
+                    //     let nr = nt[n];
+                    //     if(!nr || r.i !== nr.i)
+                    //         textElements[n] = r;
+                    //     else {
+                    //         const dR = nr.r - r.r;
+                    //         const newR = r.r + percentage * dR;
+                    //         const dS = nr.s - r.s;
+                    //         const newS = nr.s + percentage * dS;
+                    //         const dX = nr.x - r.x;
+                    //         const newX = nr.x + percentage * dX;
+                    //         const dY = nr.y - r.y;
+                    //         const newY = nr.y + percentage * dY;
+                    //         textElements[n] = {x: newX, y: newY, s: newS, r: newR, t: r.t, d: r.d, z: r.z};
+                    //     }
+                    // }
                     const pos = b.pos;
                     const nPos = buffer[i+1].pos;
                     const dX = nPos.x - pos.x;
@@ -270,6 +361,12 @@ function draw(){
         }
     }
     drawBKG(context);
+    dynamics = [];
+    if(renderMicrocosms)
+        renderMicrocosms.forEach((m) => {
+            if(m)
+                renderMicrocosm(m);
+        });
     if(dynamics)
         dynamics.forEach((r) => {
             if(r)
@@ -304,6 +401,11 @@ function renderObject(r){
         drawRotated(xx - s / 2,yy - s / 2,img,r.r, img.width, img.height, t);
     }
 }
+
+function renderMicrocosm(m){
+    Microcosm.renderStickTree(m.s,m.x,m.y,m.d,dynamics,m.s,m.t,m.d);
+}
+
 function drawBKG(context){
     context.clearRect(0,0,canvas.width, canvas.height);
     gridBKG = gridBKG || document.getElementById('gridsquare');

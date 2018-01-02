@@ -9,11 +9,11 @@ const ColBox = require('../util/colBox');
 const Game = require('../gameState');
 const Splinter = require('./splinter');
 const game = new Game();
-const Renderable = require('../../rendering/Renderable');
+const RemovedStick = require('../../rendering/RemovedStick');
 let id = 0;
 
 class Stick {
-    constructor(parent){
+    constructor(parent, index){
         this.parent = parent;
         if(parent)
             this.microcosmID = parent.microcosmID;
@@ -30,6 +30,13 @@ class Stick {
         this.exists = true;
         this.microcosm = null;
         this.id = id++;
+        const angles = [45,90,90,90,110,120,130,145,160,160,160,160,160,170,170,170,170,170,190,190,190,190,190,200,200,200,200,200,225,230,240,250,270,270,270,280,315];
+        let angle = angles[Math.floor(Math.random() * angles.length)] / 180 * Math.PI;
+        // if(reverseAngle)
+        //     angle = angle - Math.PI;
+        this.angle = angle;
+        this.rotation = angle;
+        this.index = index;
     }
 
     static getLength(){
@@ -189,6 +196,19 @@ class Stick {
             this.daughter.destroy(player);
         if(this.microcosm)//If it is the root stick
             this.microcosm.destroy();
+    }
+
+    propagateDestruction(){
+        game.removedSticks.push(new RemovedStick(this.microcosmID,this.index));
+    }
+
+    serialize(i){
+        return{
+            a: this.angle,
+            s: this.son ? this.son.serialize(i+2) : null,
+            d: this.daughter ? this.daughter.serialize(i+2) : null,
+            p: i
+        }
     }
 }
 
