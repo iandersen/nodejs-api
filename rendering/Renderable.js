@@ -9,11 +9,6 @@ class Renderable {
         if(radians !== 0)
             this.r = Math.round(radians * 1000) / 1000;
         this.t = type;
-        if(speed !== 0) {
-            this.s = speed || 0;
-            this.s = Math.round(this.s * 100) / 100;
-            this.d = direction || 0;
-        }
         this.i = id || 0;
     }
 }

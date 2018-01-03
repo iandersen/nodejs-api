@@ -4,6 +4,7 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const basicauth = require('basicauth-middleware');
 const path = require('path');
+const present = require('present');
 
 // const Storage = require('./storage/storage');
 const UserConnection = require('./UserConnection');
@@ -14,10 +15,13 @@ const Renderable = require('../rendering/Renderable');
 const TextRenderable = require('../rendering/TextRenderable');
 const Microcosm = require('./model/microcosm');
 const Game = require('./gameState');
+const names = require('./names.json');
+
 
 const SPLINTER_LIMIT = 500;
 const game = new Game();
 const MIN_PLAYERS = 30;
+let lastPacket = present();
 
 app.get('/', function(req, res){
     res.sendFile(path.resolve('./views/index.html'));
@@ -31,7 +35,7 @@ app.get('/client', function(req, res){
 
 init();
 setInterval(main, 1000/30);
-setInterval(sync, 1000/5);
+setInterval(sync, 1000/10);
 setInterval(collisions, 1000/30);
 setInterval(secondary, 1000);
 
@@ -88,12 +92,14 @@ function sync(){
                         b: player.renderBounds,
                         s: microcosm.speed,
                         d: microcosm.direction
-                    }
+                    },
+                    t: Math.round(present() - lastPacket)
                 };
                 player.socket.emit('info', info);
             }
         }
     });
+    lastPacket = present();
     game.addedSplinters = [];
     game.removedSplinters = [];
 }
@@ -158,8 +164,7 @@ function secondary(){
 }
 
 function randomName(){
-    const names = ['name1', 'name2', 'name3', 'name4', 'name5', 'name6', 'name7', 'name8', 'name9', 'name10'];
-    return names[Math.floor(Math.random() * names.length)];
+    return names[Math.floor(Math.random() * names.length)].substr(0,16);
 }
 
 function createSplinter(){
@@ -206,7 +211,7 @@ io.on('connection', function(socket){
 
 function logIn(socket){
     console.log('a user connected');
-    const name = socket.handshake.query.name.substr(0,12);
+    const name = socket.handshake.query.name.substr(0,16);
     const address = socket.handshake.address;
     game.players.push(new Player(name, address, socket));
 }

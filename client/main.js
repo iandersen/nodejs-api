@@ -31,13 +31,29 @@ let buffer = [];
 const BUFFER_SIZE = 6;
 let renderTimer;
 let renderSpeed = 1000/30;
-let socketSpeed = 1000/5;
+let renderDiff = 1000/30;
+let socketSpeed = 1000/10;
 let lastSocketTime = performance.now();
-let lastRenderTime = performance.now();
-const DELAY_TIME = 600;
+let lastRenderTime = -1;
+const DELAY_TIME = 0;
+let bufferFrameID = 0;
+let timeSinceLastFrame = 0;
+let currentFrame = 0;
+let startTime = 0;
 
 $('#startButton').click(function(){
     let name = $('#nameField').val();
+    if(timer)
+        clearInterval(timer);
+    if(timer2)
+        clearInterval(timer2);
+    if(renderTimer)
+        clearInterval(renderTimer);
+    buffer = [];
+    textElements = [];
+    splinters = [];
+    sticks = [];
+    statics = [];
     socket = io.connect('', {query: 'name='+name, forceNew: true});
     statics = [];
     socket.on('properties', (props) => {
@@ -55,6 +71,8 @@ $('#startButton').click(function(){
     });
     socket.on('info', (info)=>{
         drawGUI();
+        if(startTime === 0)
+            startTime = performance.now();
         let bufferMicrocosms = [];
         let bufferMicrocosmPositions = [];
         const r = info.r;
@@ -82,137 +100,108 @@ $('#startButton').click(function(){
                 bufferMicrocosmPositions[id] = m;
             });
         }
-        buffer.push({time: performance.now(), microcosms: bufferMicrocosms, pos: info.p, microcosmPositions: bufferMicrocosmPositions});
+        buffer.push({time: info.t, microcosms: bufferMicrocosms, pos: info.p, microcosmPositions: bufferMicrocosmPositions, id: bufferFrameID++});
+        if(buffer.length > BUFFER_SIZE)
+            buffer = buffer.slice(-BUFFER_SIZE);
         socketSpeed = performance.now() - lastSocketTime;
         lastSocketTime = performance.now();
         bounds = info.p.b;
         main();
         if(timer)
             clearInterval(timer);
-        timer = window.setInterval(extrapolatePositions, renderSpeed);
+        //timer = window.setInterval(extrapolatePositions, renderSpeed);
     });
     socket.on('dead', (s)=>{
-        if(timer)
-            clearInterval(timer);
-        if(timer2)
-            clearInterval(timer2);
-        if(renderTimer)
-            clearInterval(renderTimer);
-        textElements = [];
-        splinters = [];
-        sticks = [];
-        statics = [];
         $('#gameTitle').show();
         $('#startBox').show();
         socket.disconnect();
+        lastRenderTime = -1;
+        startTime = 0;
+        timeSinceLastFrame = 0;
     });
     $('#gameTitle').hide();
     $('#startBox').hide();
-    timer = window.setInterval(extrapolatePositions, renderSpeed);
+    //timer = window.setInterval(extrapolatePositions, renderSpeed);
     timer2 = window.setInterval(checkPercentage, 10000);
     renderTimer = window.setInterval(renderScreen, renderSpeed);
 });
 
 function renderScreen(){
+    if(startTime === 0 || performance.now() - startTime < DELAY_TIME)
+        return;
     renderMicrocosms = [];
     textElements = [];
-    renderSpeed = performance.now() - lastSocketTime;
-    lastRenderTime = performance.now();
-    if(buffer.length > BUFFER_SIZE)
-        buffer = buffer.slice(-BUFFER_SIZE);
-    if(buffer.length === BUFFER_SIZE) {
-        const now = performance.now();
-        for (let i = 0; i < buffer.length; i++) {
-            const b = buffer[i];
-            const t = b.time;
-            if (now - t <= DELAY_TIME) {
-                if(b.microcosms.length > 0){
-                    b.microcosms.forEach((m, i)=>{
-                        if(m) {
-                            microcosms[i] = m;
-                        }
-                    });
+    if(buffer.length > 2){
+        let nextFrame = buffer[1];
+        if(timeSinceLastFrame > nextFrame.time) {
+            // console.log('Time surpassed: ', timeSinceLastFrame, ' limit: ', nextFrame.time);
+            timeSinceLastFrame %= nextFrame.time;
+            //console.log('New time: ', timeSinceLastFrame);
+            buffer = buffer.slice(1, buffer.length);
+            console.log('Length after slice: ', buffer.length);
+        }
+    }
+    if(buffer.length > 1){//Interpolate
+        console.log('Buffer full');
+        renderDiff = performance.now() - lastSocketTime;
+        if(lastRenderTime !== -1)
+            renderSpeed = performance.now() - lastRenderTime;
+        timeSinceLastFrame += renderSpeed;
+        lastRenderTime = performance.now();
+        let frame = buffer[0];
+        let nextFrame = buffer[1];
+        if(frame.microcosms.length > 0){
+            frame.microcosms.forEach((m, i)=>{
+                if(m) {
+                    microcosms[i] = m;
                 }
-                const percentage = renderSpeed / socketSpeed;
-                //If we are at the last frame in the buffer, we will need to extrapolate
-                if(!buffer[i + 1] || !buffer[i+1].microcosmPositions) {
-                    b.microcosmPositions.forEach((d) => {
-                        d.x += Math.cos(d.d) * d.s * percentage;
-                        d.y += Math.sin(d.d) * d.s * percentage;
-                    });
-                    renderMicrocosms = b.microcosmPositions.map((d)=> {
-                        return {x: d.x, y: d.y, r: d.d, s: d.s, t: d.t, d: d.d};
-                    });
-                    textElements = b.microcosmPositions.map((t)=>{
-                        return {x: t.x, y: t.y, t: t.n, z: t.st * 5 + 30, s: t.s, d: t.d};
-                    });
-                    const pos = b.pos;
-                    pd = pos.d;
-                    ps = pos.s;
-                    x = pos.x;
-                    y = pos.y;
-                    x += Math.cos(pd) * ps;
-                    y += Math.sin(pd) * ps;
-                    x = Math.min(WIDTH, Math.max(x, 0));
-                    y = Math.min(HEIGHT, Math.max(y, 0));
-                }else{//We need to interpolate between two buffer frames
-                    const d = b.microcosmPositions;
-                    const nd = buffer[i+1].microcosmPositions;
-                    for(let n = 0; n < d.length; n++){
-                        let r = d[n];
-                        let nr = nd[n];
-                        if(r && nr){
-                            let dR = nr.d - r.d;
-                            if(dR > Math.PI){
-                                dR = 2 * Math.PI - dR;
-                            }
-                            if(dR < -Math.PI){
-                                dR = 2 * Math.PI + dR;
-                            }
-                            const newR = r.d + percentage * dR;
-                            const dS = nr.s - r.s;
-                            const newS = nr.s + percentage * dS;
-                            const dX = nr.x - r.x;
-                            const newX = nr.x + percentage * dX;
-                            const dY = nr.y - r.y;
-                            const newY = nr.y + percentage * dY;
-                            const storedMicrocosm = microcosms[n];
-                            if(storedMicrocosm)
-                                renderMicrocosms[n] = {x: newX, y: newY, type: storedMicrocosm.type, direction: newR, microcosm: storedMicrocosm};
-                        }
-                    }
-                    const pos = b.pos;
-                    const nPos = buffer[i+1].pos;
-                    const dX = nPos.x - pos.x;
-                    const dY = nPos.y - pos.y;
-                    x = pos.x;
-                    y = pos.y;
-                    x += percentage * dX;
-                    y += percentage * dY;
+            });
+        }
+        //console.log('t: ', timeSinceLastFrame, ' n: ', nextFrame.time);
+        const percentage = timeSinceLastFrame / nextFrame.time;
+        //console.log('Time since last frame: ', timeSinceLastFrame);
+        const d = frame.microcosmPositions;
+        const nd = nextFrame.microcosmPositions;
+        console.log('percentage: ', Math.round(percentage * 100) + '%');
+        // console.log('Better percentage: ', -(now - DELAY_TIME - t)/(buffer[i+1].time - t));
+        for(let n = 0; n < d.length; n++){
+            let r = d[n];
+            let nr = nd[n];
+            if(r && nr){
+                let dR = nr.d - r.d;
+                if(dR > Math.PI){
+                    dR = 2 * Math.PI - dR;
                 }
-                break;
+                if(dR < -Math.PI){
+                    dR = 2 * Math.PI + dR;
+                }
+                //console.log(Math.round(percentage * 100)+'%', ' From ', r.d, ' to ', nr.d);
+                //console.log('Time between buffers: ', buffer[i+1].time - t);
+                const newR = r.d + percentage * dR;
+                const dX = nr.x - r.x;
+                const newX = r.x + percentage * dX;
+                const dY = nr.y - r.y;
+                const newY = r.y + percentage * dY;
+                const storedMicrocosm = microcosms[n];
+                if(storedMicrocosm)
+                    renderMicrocosms[n] = {x: newX, y: newY, type: storedMicrocosm.type, direction: newR, microcosm: storedMicrocosm};
             }
         }
+        const pos = frame.pos;
+        const nPos = nextFrame.pos;
+        const dX = nPos.x - pos.x;
+        const dY = nPos.y - pos.y;
+        x = pos.x;
+        y = pos.y;
+        x += percentage * dX;
+        y += percentage * dY;
+    }else if(buffer.size > 0){//Extrapolating
+        console.log('Buffer not full!');
+    }else{
+        console.log('buffer empty!');
     }
     draw();
 }
-
-function extrapolatePositions(){
-    dynamics.forEach((d)=>{
-        d.x += Math.cos(d.d) * d.s;
-        d.y += Math.sin(d.d) * d.s;
-    });
-    textElements.forEach((t)=>{
-        t.x += Math.cos(t.d) * t.s;
-        t.y += Math.sin(t.d) * t.s;
-    });
-    x += Math.cos(pd) * ps;
-    y += Math.sin(pd) * ps;
-    x = Math.min(WIDTH, Math.max(x, 0));
-    y = Math.min(HEIGHT, Math.max(y, 0));
-    //draw();
-}
-
 
 function main(){
     lastMouseX = mouseX;
@@ -313,6 +302,7 @@ function renderObject(r){
 }
 
 function renderMicrocosm(x, y, direction, type, microcosm){
+    // console.log('Rendering at: ', x, y, direction, '. Microcosm: ', microcosm);
     Microcosm.renderStickTree(microcosm.stick,x,y,direction,dynamics,type);
 }
 
@@ -333,18 +323,18 @@ function drawGUI(){
     guiCanvas.height = window.innerHeight;
     const w = guiCanvas.width;
     guiContext.fillStyle = 'rgba(0,0,0,.5)';
-    const boxHeight = 375;
-    const boxWidth = 275;
+    const boxHeight = 400;
+    const boxWidth = 300;
     guiContext.clearRect(w - boxWidth, 0, boxWidth, boxHeight);
     guiContext.fillRect(w - boxWidth, 0, boxWidth, boxHeight);
-    const lineHeight = boxHeight / 10;
+    const lineHeight = boxHeight / 10.5;
     const margin = 10;
     if(scoreBoard)
         scoreBoard.forEach((s, i) => {
             const name = s.name;
             const score = s.score;
             guiContext.fillStyle = 'gold';
-            guiContext.font = "bold 30px Arial";
+            guiContext.font = "bold 25px Arial";
             const textWidth = guiContext.measureText(name + ': ').width;
             guiContext.fillText(name + ': ', w - boxWidth + margin, lineHeight * (i+1));
             guiContext.fillStyle = 'white';

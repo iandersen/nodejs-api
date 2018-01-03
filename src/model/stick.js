@@ -206,12 +206,15 @@ class Stick {
     }
 
     serialize(i){
-        return{
-            a: this.angle,
-            s: this.son ? this.son.serialize(i+2) : null,
-            d: this.daughter ? this.daughter.serialize(i+2) : null,
+        let ret = {
+            a: Math.round(1000 * this.angle) / 1000,
             p: i
-        }
+        };
+        if(this.son)
+            ret.s = this.son.serialize(i+2);
+        if(this.daughter)
+            ret.d = this.daughter.serialize(i+2);
+        return ret;
     }
 }
 

@@ -244,7 +244,7 @@ class Microcosm {
     }
 
     serializePosition(){
-        return {i: this.id, x: Math.round(this.x), y: Math.round(this.y), d: Math.round(this.direction * 1000) / 1000, s: Math.round(this.speed * 100) / 100, n: this.player.name, st: this.numSticks, t: this.type}
+        return {i: this.id, x: Math.round(this.x), y: Math.round(this.y), d: Math.round(this.direction * 1000) / 1000}
     }
 }
 
