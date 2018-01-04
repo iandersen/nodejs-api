@@ -131,18 +131,20 @@ function renderScreen(){
         return;
     renderMicrocosms = [];
     textElements = [];
-    if(buffer.length > 2){
+    if(buffer.length > 3){
+        // console.log(buffer.length);
         let nextFrame = buffer[1];
         if(timeSinceLastFrame > nextFrame.time) {
             // console.log('Time surpassed: ', timeSinceLastFrame, ' limit: ', nextFrame.time);
-            timeSinceLastFrame %= nextFrame.time;
+            if(buffer.length === 4)//Make sure the frames don't pile up
+                timeSinceLastFrame %= nextFrame.time;
             //console.log('New time: ', timeSinceLastFrame);
             buffer = buffer.slice(1, buffer.length);
             console.log('Length after slice: ', buffer.length);
         }
     }
     if(buffer.length > 1){//Interpolate
-        console.log('Buffer full');
+        // console.log('Buffer full');
         renderDiff = performance.now() - lastSocketTime;
         if(lastRenderTime !== -1)
             renderSpeed = performance.now() - lastRenderTime;
@@ -162,29 +164,26 @@ function renderScreen(){
         //console.log('Time since last frame: ', timeSinceLastFrame);
         const d = frame.microcosmPositions;
         const nd = nextFrame.microcosmPositions;
-        console.log('percentage: ', Math.round(percentage * 100) + '%');
-        // console.log('Better percentage: ', -(now - DELAY_TIME - t)/(buffer[i+1].time - t));
+        // console.log('percentage: ', Math.round(percentage * 100) + '%');
         for(let n = 0; n < d.length; n++){
             let r = d[n];
             let nr = nd[n];
             if(r && nr){
-                let dR = nr.d - r.d;
-                if(dR > Math.PI){
-                    dR = 2 * Math.PI - dR;
-                }
-                if(dR < -Math.PI){
-                    dR = 2 * Math.PI + dR;
-                }
-                //console.log(Math.round(percentage * 100)+'%', ' From ', r.d, ' to ', nr.d);
-                //console.log('Time between buffers: ', buffer[i+1].time - t);
-                const newR = r.d + percentage * dR;
+                let myDirection = r.d;
+                let nextDirection = nr.d;
+                let diff = nextDirection - myDirection;
+                if(diff > Math.PI)
+                    diff = 2 * Math.PI - diff;
+                if(diff < -Math.PI)
+                    diff = 2 * Math.PI + diff;
+                const newDirection = diff * percentage + myDirection;
                 const dX = nr.x - r.x;
                 const newX = r.x + percentage * dX;
                 const dY = nr.y - r.y;
                 const newY = r.y + percentage * dY;
                 const storedMicrocosm = microcosms[n];
                 if(storedMicrocosm)
-                    renderMicrocosms[n] = {x: newX, y: newY, type: storedMicrocosm.type, direction: newR, microcosm: storedMicrocosm};
+                    renderMicrocosms[n] = {x: newX, y: newY, type: storedMicrocosm.type, direction: newDirection, microcosm: storedMicrocosm};
             }
         }
         const pos = frame.pos;
@@ -271,6 +270,11 @@ function draw(){
             if(r)
                 renderObject(r);
         });
+    if(renderMicrocosms)
+        renderMicrocosms.forEach((m) => {
+            if(m)
+                drawMicrocosmText(m.x, m.y, m.microcosm);
+        });
     if(statics)
         statics.forEach((r) => {
             if(r)
@@ -304,6 +308,10 @@ function renderObject(r){
 function renderMicrocosm(x, y, direction, type, microcosm){
     // console.log('Rendering at: ', x, y, direction, '. Microcosm: ', microcosm);
     Microcosm.renderStickTree(microcosm.stick,x,y,direction,dynamics,type);
+}
+
+function drawMicrocosmText(x,y,microcosm){
+    renderText({x: x, y: y, z: microcosm.numSticks * 5 + 30, t: microcosm.name});
 }
 
 function drawBKG(context){
@@ -352,7 +360,7 @@ function renderText(textElement){
         context.font = `bold ${textElement.z}px Work Sans`;
         context.fillText(textElement.t, xx, yy);
         context.fillStyle = 'black';
-        context.strokeWidth = Math.floor(textElement.z / 10);
+        context.lineWidth = Math.floor(Math.sqrt(textElement.z) - 4);
         context.strokeText(textElement.t, xx, yy)
     }
 }

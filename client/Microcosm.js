@@ -4,14 +4,12 @@
 const Stick = require('./stick');
 
 class Microcosm {
-    constructor(id, stick, type, x, y, speed, direction){
+    constructor(id, stick, type, name, numSticks){
         this.id = id;
         this.stick = stick;
         this.type = type;
-        this.x = x;
-        this.y = y;
-        this.speed = speed;
-        this.direction = direction;
+        this.name = name;
+        this.numSticks = numSticks;
     }
 
     removeStick(index){
@@ -65,7 +63,7 @@ class Microcosm {
     static deserialize(serialized){
         return new Microcosm(serialized.i,
             Stick.deserialize(serialized.s),
-            serialized.t);
+            serialized.t, serialized.n, serialized.st);
     }
 }
 

@@ -17,7 +17,23 @@ class Player {
     constructor(name, address, socket){
         this.name = name;
         this.address = address;
-        this.microcosm = new Microcosm(Room.randomX(), Room.randomY(), 0);
+        let x = Room.randomX();
+        let y = Room.randomY();
+        let i = 0;
+        while(game.distanceToNearestPlayer(x,y) < 1500 && i < 10){
+            x = Room.randomX();
+            y = Room.randomY();
+            i++;
+        }
+        if(i >= 10){
+            console.log('ATTEMPTS EXCEEDED. Distance: ', game.distanceToNearestPlayer(x,y));
+            while(game.distanceToNearestPlayer(x,y) < 750 && i < 20){
+                x = Room.randomX();
+                y = Room.randomY();
+                i++;
+            }
+        }
+        this.microcosm = new Microcosm(x, y, 0);
         this.microcosm.player = this;
         this.centerX = -1;
         this.centerY = -1;
@@ -74,7 +90,7 @@ class Player {
         game.players.forEach((c, i)=> {
             if (c.id === this.id) {
                 if(c.socket)
-                    c.socket.emit('dead', {});
+                    setTimeout(()=>{c.socket.emit('dead', {})}, 200);
                 else{
                     //If it's a bot
                     game.players.splice(i, 1);

@@ -200,11 +200,12 @@ class Microcosm {
         let myY = this.y;
         let myDirection = this.direction;
         let angle = this.angle(cx, cy, x, y);
-        this.speed = Math.max(speed - this.numSticks * .2, 1);
-        this.rotationSpeed = Math.max(rotationSpeed * Math.pow(.85, this.numSticks-1), rotationSpeed / 5);
+        this.speed = Math.max(speed - this.numSticks * .15, 1);
+        this.rotationSpeed = Math.max(rotationSpeed * Math.pow(.9, this.numSticks-1), rotationSpeed / 5);
         if(myDirection < -Math.PI)
             myDirection = 2 * Math.PI + myDirection;
-        let diff = angle - myDirection;
+        let diff = angle % (2 * Math.PI) - myDirection % (2 * Math.PI);
+        diff %= (2 * Math.PI);
         if(diff > Math.PI)
             diff = Math.PI - diff;
         if(diff < -Math.PI)
@@ -239,7 +240,9 @@ class Microcosm {
         return{
             i: this.id,
             t: this.type,
-            s: this.stick ? this.stick.serialize(0) : null
+            s: this.stick ? this.stick.serialize(0) : null,
+            n: this.player.name,
+            st: this.numSticks
         }
     }
 
