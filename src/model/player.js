@@ -1,7 +1,7 @@
 /**
  * Created by Ian on 12/19/2017.
  */
-// const Storage = require('../storage/storage');
+
 const Microcosm = require('./microcosm');
 const Room = require('./room');
 const Game = require('../gameState');

@@ -1,28 +1,5 @@
  var path = require('path');
  var webpack = require('webpack');
- var serverConfig = {
-     target: 'node',
-     entry: './src/main.js',
-     output: {
-         path: path.resolve(__dirname, 'build'),
-         filename: '[name].bundle.js'
-     },
-     module: {
-         loaders: [
-             {
-                 test: /\.js$/,
-                 loader: 'babel-loader',
-                 query: {
-                     presets: ['env']
-                 }
-             }
-         ]
-     },
-     stats: {
-         colors: true
-     },
-     devtool: 'source-map'
- };
 
  var clientConfig = {
      target: 'web', // <=== can be omitted as default is 'web'
@@ -53,29 +30,3 @@
  };
 
  module.exports = [clientConfig ];
- // module.exports = {
- //     entry: {
- //         main: './src/main.js',
- //         client: './client/main.js'
- //     },
- //     target: 'node',
- //     output: {
- //         path: path.resolve(__dirname, 'build'),
- //         filename: '[name].bundle.js'
- //     },
- //     module: {
- //         loaders: [
- //             {
- //                 test: /\.js$/,
- //                 loader: 'babel-loader',
- //                 query: {
- //                     presets: ['env']
- //                 }
- //             }
- //         ]
- //     },
- //     stats: {
- //         colors: true
- //     },
- //     devtool: 'source-map'
- // };

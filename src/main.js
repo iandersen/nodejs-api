@@ -6,14 +6,11 @@ const basicauth = require('basicauth-middleware');
 const path = require('path');
 const present = require('present');
 
-// const Storage = require('./storage/storage');
-const UserConnection = require('./UserConnection');
 const Room = require('./model/room');
 const Player = require('./model/player');
 const Splinter = require('./model/splinter');
 const Renderable = require('../rendering/Renderable');
 const TextRenderable = require('../rendering/TextRenderable');
-const Microcosm = require('./model/microcosm');
 const Game = require('./gameState');
 const names = require('./names.json');
 
@@ -33,19 +30,12 @@ app.get('/client', function(req, res){
     res.sendFile(path.resolve('./build/client.bundle.js'));
 });
 
-init();
 setInterval(main, 1000/30);
 setInterval(sync, 1000/10);
 setInterval(collisions, 1000/30);
 setInterval(secondary, 1000);
 
-function init(){
-    // Storage.deleteAll('splinter');
-}
-
 function sync(){
-    let renderables = [];
-    let textElements = [];
     let microcosmPositions = [];
     let serializedMicrocosms = [];
     let actualMicrocosms = [];

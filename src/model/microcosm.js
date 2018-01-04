@@ -5,11 +5,7 @@
 const Stick = require('./stick');
 const Room = require('./room');
 const Renderable = require('../../rendering/Renderable');
-const AddedStick = require('../../rendering/AddedStick');
-const RemovedMicrocosm = require('../../rendering/RemovedMicrocosm');
 const Point = require('../util/point');
-const Game = require('../gameState');
-const game = new Game();
 
 const speed = 9;
 const rotationSpeed = Math.PI / 30;
@@ -110,11 +106,9 @@ class Microcosm {
             this.player.subtractSplinters(num);
     }
 
-    //Returns bounds
     static renderStickTree(rootStick, x, y, dir, arr, type){
         if(!rootStick)
             return;
-        //Tell the stick where it is
         let minX, minY, maxX, maxY;
         let son = rootStick.son || rootStick.s;
         let sonAngle = son ? son.angle : 0;

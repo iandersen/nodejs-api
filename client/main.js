@@ -2,19 +2,15 @@
 // let io = ioClient('http://localhost:8080');
 import $ from 'jquery';
 require('../sass/main.scss');
-const types = require('../rendering/types');
 const Microcosm = require('../src/model/microcosm');
 const ClientMicrocosm = require('./Microcosm');
-const Stick = require('../src/model/stick');
 let images = {};
 
-let socket, mouseX, mouseY, lastMouseX, lastMouseY, x, y, splinters, sticks, scoreBoard, bounds;
+let socket, mouseX, mouseY, lastMouseX, lastMouseY, lastCanvasWidth, lastCanvasHeight, x, y, splinters, sticks, scoreBoard, bounds;
 let statics = [];
 let dynamics = [];
 let microcosms = [];
 let renderMicrocosms = [];
-let pd = 0;
-let ps = 0;
 let textElements = [];
 const canvas = document.getElementById('gameCanvas');
 const guiCanvas = document.getElementById('guiCanvas');
@@ -38,7 +34,6 @@ let lastRenderTime = -1;
 const DELAY_TIME = 0;
 let bufferFrameID = 0;
 let timeSinceLastFrame = 0;
-let currentFrame = 0;
 let startTime = 0;
 
 $('#startButton').click(function(){
@@ -107,9 +102,6 @@ $('#startButton').click(function(){
         lastSocketTime = performance.now();
         bounds = info.p.b;
         main();
-        if(timer)
-            clearInterval(timer);
-        //timer = window.setInterval(extrapolatePositions, renderSpeed);
     });
     socket.on('dead', (s)=>{
         $('#gameTitle').show();
@@ -121,7 +113,6 @@ $('#startButton').click(function(){
     });
     $('#gameTitle').hide();
     $('#startBox').hide();
-    //timer = window.setInterval(extrapolatePositions, renderSpeed);
     timer2 = window.setInterval(checkPercentage, 10000);
     renderTimer = window.setInterval(renderScreen, renderSpeed);
 });
@@ -132,10 +123,8 @@ function renderScreen(){
     renderMicrocosms = [];
     textElements = [];
     if(buffer.length > 3){
-        // console.log(buffer.length);
         let nextFrame = buffer[1];
         if(timeSinceLastFrame > nextFrame.time) {
-            // console.log('Time surpassed: ', timeSinceLastFrame, ' limit: ', nextFrame.time);
             if(buffer.length === 4)//Make sure the frames don't pile up
                 timeSinceLastFrame %= nextFrame.time;
             //console.log('New time: ', timeSinceLastFrame);
@@ -144,7 +133,6 @@ function renderScreen(){
         }
     }
     if(buffer.length > 1){//Interpolate
-        // console.log('Buffer full');
         renderDiff = performance.now() - lastSocketTime;
         if(lastRenderTime !== -1)
             renderSpeed = performance.now() - lastRenderTime;
@@ -159,12 +147,9 @@ function renderScreen(){
                 }
             });
         }
-        //console.log('t: ', timeSinceLastFrame, ' n: ', nextFrame.time);
         const percentage = timeSinceLastFrame / nextFrame.time;
-        //console.log('Time since last frame: ', timeSinceLastFrame);
         const d = frame.microcosmPositions;
         const nd = nextFrame.microcosmPositions;
-        // console.log('percentage: ', Math.round(percentage * 100) + '%');
         for(let n = 0; n < d.length; n++){
             let r = d[n];
             let nr = nd[n];
@@ -203,11 +188,13 @@ function renderScreen(){
 }
 
 function main(){
-    lastMouseX = mouseX;
-    lastMouseY = mouseY;
-    const w = $(window).width();
-    const h = $(window).height();
-    socket.emit('m', {x: mouseX, y: mouseY, w: w, h: h});
+    if(mouseX !== lastMouseX || mouseY !== lastMouseY){
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+        const w = $(window).width();
+        const h = $(window).height();
+        socket.emit('m', {x: mouseX, y: mouseY, w: w, h: h});
+    }
     socket.emit('r', {x: Math.round(x - canvas.width / 2), y: Math.round(y - canvas.height / 2), w: canvas.width, h: canvas.height});
 }
 
@@ -306,7 +293,6 @@ function renderObject(r){
 }
 
 function renderMicrocosm(x, y, direction, type, microcosm){
-    // console.log('Rendering at: ', x, y, direction, '. Microcosm: ', microcosm);
     Microcosm.renderStickTree(microcosm.stick,x,y,direction,dynamics,type);
 }
 

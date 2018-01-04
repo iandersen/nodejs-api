@@ -2,14 +2,11 @@
  * Created by Ian on 12/19/2017.
  */
 
-// const Storage = require('../storage/storage');
 const Line = require('../util/line');
 const Point = require('../util/point');
 const ColBox = require('../util/colBox');
 const Game = require('../gameState');
-const Splinter = require('./splinter');
 const game = new Game();
-const RemovedStick = require('../../rendering/RemovedStick');
 let id = 0;
 
 class Stick {
@@ -32,8 +29,6 @@ class Stick {
         this.id = id++;
         const angles = [45,90,90,90,110,120,130,145,160,160,160,160,160,170,170,170,170,170,190,190,190,190,190,200,200,200,200,200,225,230,240,250,270,270,270,280,315];
         let angle = angles[Math.floor(Math.random() * angles.length)] / 180 * Math.PI;
-        // if(reverseAngle)
-        //     angle = angle - Math.PI;
         this.angle = angle;
         this.rotation = angle;
         this.index = index;
@@ -175,16 +170,6 @@ class Stick {
         this.backY = this.y + this.lengthDirY(Stick.getLength() / 2, dir - Math.PI);
         const drops = 15;
         for(let i = 0; i < drops; i++){
-            //let xx= Math.round(this.backX + this.lengthDirX(Stick.getLength() / (i+1), dir));
-            //let yy= Math.round(this.backY + this.lengthDirX(Stick.getLength() / (i+1), dir));
-            //const type = Splinter.randomType();
-            // for(let n = game.maxSplinters, i = 0; true; n++, i++){
-            //     if(!game.splinters[n]){
-            //         game.addedSplinters.push({i: n, r: new Renderable(xx,yy,0,type)});
-            //         game.splinters[n] = new Splinter(xx, yy, type);
-            //         break;
-            //     }
-            // }
             if(player)
                 player.addSplinter();
         }
