@@ -1,7 +1,7 @@
 /**
  * Created by Ian on 1/2/2018.
  */
-const Stick = require('./stick');
+const Stick = require('./Stick');
 
 class Microcosm {
     constructor(id, stick, type, name, numSticks){
