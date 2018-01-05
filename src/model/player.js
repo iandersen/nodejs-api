@@ -57,7 +57,7 @@ class Player {
         this.lastSubmittedScore = 0;
         this.scoreUpdateTimer = setInterval(this.updateScore, 10000);
         this.timeStamp = 0;
-        request.post('https://htmlhigh5.com/play/popsicio/score/create',{},
+        request.post('https://htmlhigh5.com/play/popsicio/score/create',{ip: this.address},
             function(err,httpResponse,body){});
     }
 
@@ -66,7 +66,7 @@ class Player {
         if(increment > 0)
             this.lastSubmittedScore = this.maxScore;
         this.timeStamp += Math.ceil(Math.random() * 5);
-        request.post('https://htmlhigh5.com/play/popsicio/score/update',{json: {timestamp: this.timeStamp, score: increment, hash: Player.hashScore(increment, this.timeStamp)}},
+        request.post('https://htmlhigh5.com/play/popsicio/score/update',{json: {timestamp: this.timeStamp, score: increment, ip: this.address, hash: Player.hashScore(increment, this.timeStamp)}},
             function(err,httpResponse,body){ });
     }
 
@@ -117,7 +117,7 @@ class Player {
         clearInterval(this.scoreUpdateTimer);
         const increment = Math.max(this.maxScore - this.lastSubmittedScore, 0);
         const timestamp = 9999999;
-        request.post('https://htmlhigh5.com/play/popsicio/score/store',{json: {timestamp: timestamp, increment: increment, hash: Player.hashScore(increment, timestamp)}},
+        request.post('https://htmlhigh5.com/play/popsicio/score/store',{json: {timestamp: timestamp, increment: increment, hash: Player.hashScore(increment, timestamp), ip: this.address}},
             function(err,httpResponse,body){});
     }
 
