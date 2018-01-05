@@ -200,10 +200,11 @@ io.on('connection', function(socket){
 });
 
 function logIn(socket){
-    console.log('a user connected');
     const name = socket.handshake.query.name.substr(0,16);
     const address = socket.handshake.address;
-    game.players.push(new Player(name, address, socket));
+    const player = new Player(name, address, socket);
+    game.players.push(player);
+    player.loggedIn();
 }
 
 function getPlayer(socket){
@@ -225,9 +226,9 @@ function logOut(socket){
             id = i;
         return id === i;
     });
+    const player = game.players[id];
+    player.loggedOut();
     game.players.splice(id, 1);
-    console.log('user disconnected');
-    console.log('Users connected: ', game.players.length);
 }
 const server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
 const server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';

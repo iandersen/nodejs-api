@@ -6,6 +6,8 @@ const Microcosm = require('./microcosm');
 const Room = require('./room');
 const Game = require('../gameState');
 const game = new Game();
+const md5 = require('md5');
+const request = require('request');
 
 const MOVE_STATE = 0;
 const BUILD_STATE = 1;
@@ -26,7 +28,6 @@ class Player {
             i++;
         }
         if(i >= 10){
-            console.log('ATTEMPTS EXCEEDED. Distance: ', game.distanceToNearestPlayer(x,y));
             while(game.distanceToNearestPlayer(x,y) < 750 && i < 20){
                 x = Room.randomX();
                 y = Room.randomY();
@@ -51,6 +52,29 @@ class Player {
         this.bounds = {x: 0, y: 0, width: Room.getWidth(), height: Room.getHeight()};
     }
 
+    loggedIn(){
+        this.maxScore = 0;
+        this.lastSubmittedScore = 0;
+        this.scoreUpdateTimer = setInterval(this.updateScore, 10000);
+        this.timeStamp = 0;
+        request.post('https://htmlhigh5.com/play/popsicio/score/create');
+    }
+
+    updateScore(){
+        const increment = Math.max(this.maxScore - this.lastSubmittedScore, 0);
+        if(increment > 0)
+            this.lastSubmittedScore = this.maxScore;
+        this.timeStamp += Math.ceil(Math.random() * 5);
+        request.post('https://htmlhigh5.com/play/popsicio/score/update',{json: {timestamp: this.timeStamp, score: increment, hash: Player.hashScore(increment, this.timeStamp)}});
+    }
+
+    static hashScore(value, salt){
+        let val = md5(value + md5(salt + md5(value + md5(salt))));
+        for(let i = 0; i < 37; i++)
+            val = md5(salt + val);
+        return val;
+    }
+
     static BUILD_STATE(){
         return BUILD_STATE;
     }
@@ -71,6 +95,8 @@ class Player {
 
     addSplinter(){
         this.splinters++;
+        if(this.splinters > this.maxScore)
+            this.maxScore = this.splinters;
         this.sticksLeft--;
         if(this.microcosm){
             if(this.sticksLeft === 0){
@@ -83,6 +109,13 @@ class Player {
     stickLost(){
         if(this.socket)
             this.socket.emit('sL', {});
+    }
+
+    loggedOut(){
+        clearInterval(this.scoreUpdateTimer);
+        const increment = Math.max(this.maxScore - this.lastSubmittedScore, 0);
+        const timestamp = 9999999;
+        request.post('https://htmlhigh5.com/play/popsicio/score/store',{json: {timestamp: timestamp, increment: increment, hash: Player.hashScore(increment, timestamp)}});
     }
 
     destroy(){
