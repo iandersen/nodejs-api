@@ -8,11 +8,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
 </head>
 <body>
-<h1 id="gameTitle">Popsic.io</h1>
-<div id="startBox">
-        <input type="text" title="name" id="nameField" maxlength="16">
-        <br/>
-        <input type="submit" value="JOIN" id="startButton">
+<div id="container">
+    <img id="gameTitle" src="/img/nameonlylogo.png">
+    <div id="backgroundBox"></div>
+    <div id="startBox">
+            <label for="nameField">Name: </label>
+            <input type="text" title="name" id="nameField" maxlength="16">
+            <input type="submit" value="JOIN" id="startButton">
+    </div>
 </div>
 <canvas id="gameCanvas">
     This is the canvas

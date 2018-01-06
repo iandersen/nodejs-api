@@ -39,8 +39,33 @@ let extrapolations = 0;
 let interpolations = 0;
 let bufferFilled = false;
 
-$('#startButton').click(function(){
+$('#startButton').click(start);
+$( "body" ).keypress(function( event ) {
+    if (event.which === 13) {
+        start()
+    }
+});
+
+function balanceBuffer(){
+    // console.log('Interpolations: ', interpolations);
+    // console.log('Extrapolations: ', extrapolations);
+    const percentage = extrapolations/(interpolations+extrapolations);
+    // console.log('Percentage: ', percentage);
+    if(percentage < .10) {
+        if (BUFFER_SIZE > 3)
+            BUFFER_SIZE--;
+    }else {
+        BUFFER_SIZE++;
+        bufferFilled = false;
+    }
+    interpolations = 0;
+    extrapolations = 0;
+    console.log('New buffer size: ', BUFFER_SIZE);
+}
+
+function start(){
     let name = $('#nameField').val();
+    $('#backgroundBox').hide();
     if(timer)
         clearInterval(timer);
     if(timer2)
@@ -123,23 +148,6 @@ $('#startButton').click(function(){
     timer2 = window.setInterval(checkPercentage, 10000);
     renderTimer = window.setInterval(renderScreen, renderSpeed);
     interpolationTimer = window.setInterval(balanceBuffer, 3000);
-});
-
-function balanceBuffer(){
-    // console.log('Interpolations: ', interpolations);
-    // console.log('Extrapolations: ', extrapolations);
-    const percentage = extrapolations/(interpolations+extrapolations);
-    // console.log('Percentage: ', percentage);
-    if(percentage < .10) {
-        if (BUFFER_SIZE > 3)
-            BUFFER_SIZE--;
-    }else {
-        BUFFER_SIZE++;
-        bufferFilled = false;
-    }
-    interpolations = 0;
-    extrapolations = 0;
-    console.log('New buffer size: ', BUFFER_SIZE);
 }
 
 function renderScreen(){

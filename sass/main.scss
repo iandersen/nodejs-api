@@ -4,6 +4,37 @@ body{
   border: 0;
   background-color: #aaa;
   overflow: hidden;
+  display: table;
+  width: 100%;
+  height: 100%;
+}
+
+html{
+  width: 100%;
+  height: 100%;
+}
+
+#container{
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+  width: 100%;
+  max-height: 100%;
+  z-index: 1000;
+  position: absolute;
+  height: 100%;
+}
+
+#backgroundBox{
+  background-image: url('/img/only_posicles_small.png');
+  background-repeat: repeat;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  opacity: .5;
+  z-index: -1;
+  top: 0;
+  left: 0;
 }
 
 html{
@@ -11,27 +42,34 @@ html{
 }
 
 #gameTitle{
-  position: absolute;
-  top: 100px;
+  //position: absolute;
+  //top: 100px;
   text-align: center;
-  margin-left: 50%;
-  transform: translateX(-50%);
+  //margin-left: 50%;
+  //transform: translateX(-50%);
   font-size: 80px;
+  max-width: 65%;
+  max-height: 35%;
+  margin-top: 150px;
 }
 
 #startBox{
-  position: absolute;
+  //position: absolute;
   text-align: center;
-  margin-left: 50%;
-  transform: translateX(-50%), translateY(-50%);
-  margin-top: 300px;
+  //margin-left: 50%;
+  //transform: translateX(-50%), translateY(-50%);
+ // margin-top: 300px;
   font-size: 80px;
   z-index: 1000;
+  margin-bottom: 100px;
 }
 
 #gameCanvas, #guiCanvas{
   width: 100%;
   height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 #guiCanvas{
@@ -46,4 +84,15 @@ html{
   width: 0;
   overflow: hidden;
   display: none;
+}
+
+#nameField, #startButton{
+  font-size: 25px;
+  display: inline-block;
+}
+
+label{
+  font-size: 32px;
+  font-weight: bold;
+  font-family: 'Work Sans', Georgia, Serif;
 }
