@@ -133,11 +133,12 @@ function balanceBuffer(){
     if(percentage < .10) {
         if (BUFFER_SIZE > 3)
             BUFFER_SIZE--;
-    }else
+    }else {
         BUFFER_SIZE++;
+        bufferFilled = false;
+    }
     interpolations = 0;
     extrapolations = 0;
-    bufferFilled = false;
     console.log('New buffer size: ', BUFFER_SIZE);
 }
 

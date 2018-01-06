@@ -7,8 +7,8 @@ const Room = require('./room');
 const Renderable = require('../../rendering/Renderable');
 const Point = require('../util/point');
 
-const speed = 9;
-const rotationSpeed = Math.PI / 30;
+const speed = 14;
+const rotationSpeed = Math.PI / 25;
 let id = 0;
 
 class Microcosm {

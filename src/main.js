@@ -17,7 +17,7 @@ const names = require('./names.json');
 
 const SPLINTER_LIMIT = 500;
 const game = new Game();
-const MIN_PLAYERS = 30;
+const MIN_PLAYERS = 50;
 let lastPacket = present();
 
 app.get('/', function(req, res){
