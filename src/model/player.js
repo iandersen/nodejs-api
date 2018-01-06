@@ -65,9 +65,9 @@ class Player {
     }
 
     updateScore(){
-        const increment = Math.max(this.maxScore - this.lastSubmittedScore, 0);
-        if(increment > 0)
-            this.lastSubmittedScore = this.maxScore;
+        const increment = 0;//Math.max(this.maxScore - this.lastSubmittedScore, 0);
+        //if(increment > 0)
+        //    this.lastSubmittedScore = this.maxScore;
         this.timeStamp += Math.ceil(Math.random() * 5);
         request.post('https://htmlhigh5.com/play/popsicio/score/update',{json: {timestamp: this.timeStamp, score: increment, ip: this.address, hash: Player.hashScore(increment, this.timeStamp)}},
             function(err,httpResponse,body){console.log(body)});
@@ -118,8 +118,9 @@ class Player {
 
     loggedOut(){
         clearInterval(this.scoreUpdateTimer);
-        const increment = Math.max(this.maxScore - this.lastSubmittedScore, 0);
+        const increment = this.maxScore;//Math.max(this.maxScore - this.lastSubmittedScore, 0);
         const timestamp = 9999999;
+        console.log('Final score: ', increment);
         request.post('https://htmlhigh5.com/play/popsicio/score/store',{json: {timestamp: timestamp, increment: increment, hash: Player.hashScore(increment, timestamp), ip: this.address}},
             function(err,httpResponse,body){console.log(body)});
     }
