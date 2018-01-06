@@ -22,9 +22,9 @@ let attempts = 0;
 let time = 0;
 let renderSize = 0;
 let forceResize = false;
-let timer, timer2;
+let timer, timer2, interpolationTimer;
 let buffer = [];
-const BUFFER_SIZE = 6;
+let BUFFER_SIZE = 6;
 let renderTimer;
 let renderSpeed = 1000/30;
 let renderDiff = 1000/30;
@@ -35,6 +35,9 @@ const DELAY_TIME = 0;
 let bufferFrameID = 0;
 let timeSinceLastFrame = 0;
 let startTime = 0;
+let extrapolations = 0;
+let interpolations = 0;
+let bufferFilled = false;
 
 $('#startButton').click(function(){
     let name = $('#nameField').val();
@@ -44,6 +47,8 @@ $('#startButton').click(function(){
         clearInterval(timer2);
     if(renderTimer)
         clearInterval(renderTimer);
+    if(interpolationTimer)
+        clearInterval(interpolationTimer);
     buffer = [];
     textElements = [];
     splinters = [];
@@ -110,26 +115,48 @@ $('#startButton').click(function(){
         lastRenderTime = -1;
         startTime = 0;
         timeSinceLastFrame = 0;
+        if(interpolationTimer)
+            clearInterval(interpolationTimer);
     });
     $('#gameTitle').hide();
     $('#startBox').hide();
     timer2 = window.setInterval(checkPercentage, 10000);
     renderTimer = window.setInterval(renderScreen, renderSpeed);
+    interpolationTimer = window.setInterval(balanceBuffer, 3000);
 });
+
+function balanceBuffer(){
+    // console.log('Interpolations: ', interpolations);
+    // console.log('Extrapolations: ', extrapolations);
+    const percentage = extrapolations/(interpolations+extrapolations);
+    // console.log('Percentage: ', percentage);
+    if(percentage < .10) {
+        if (BUFFER_SIZE > 3)
+            BUFFER_SIZE--;
+    }else
+        BUFFER_SIZE++;
+    interpolations = 0;
+    extrapolations = 0;
+    bufferFilled = false;
+    console.log('New buffer size: ', BUFFER_SIZE);
+}
 
 function renderScreen(){
     if(startTime === 0 || performance.now() - startTime < DELAY_TIME)
         return;
+    if(!bufferFilled && buffer.length < BUFFER_SIZE)
+        return;
+    if(buffer.length >= BUFFER_SIZE)
+        bufferFilled = true;
     renderMicrocosms = [];
     textElements = [];
-    if(buffer.length > 3){
+    if(buffer.length > BUFFER_SIZE){
         let nextFrame = buffer[1];
         if(timeSinceLastFrame > nextFrame.time) {
-            if(buffer.length === 4)//Make sure the frames don't pile up
-                timeSinceLastFrame %= nextFrame.time;
+            timeSinceLastFrame %= nextFrame.time;
             //console.log('New time: ', timeSinceLastFrame);
             buffer = buffer.slice(1, buffer.length);
-            console.log('Length after slice: ', buffer.length);
+            // console.log('Length after slice: ', buffer.length);
         }
     }
     if(buffer.length > 1){//Interpolate
@@ -147,7 +174,18 @@ function renderScreen(){
                 }
             });
         }
-        const percentage = timeSinceLastFrame / nextFrame.time;
+        let percentage = timeSinceLastFrame / nextFrame.time;
+        if(percentage > 1 && buffer.length > 2){
+            timeSinceLastFrame %= buffer[1].time;
+            buffer = buffer.slice(1,buffer.length);
+            frame = buffer[0];
+            nextFrame = buffer[1];
+            percentage = timeSinceLastFrame / nextFrame.time
+        }
+        if(percentage > 1)
+            extrapolations++;
+        else
+            interpolations++;
         const d = frame.microcosmPositions;
         const nd = nextFrame.microcosmPositions;
         for(let n = 0; n < d.length; n++){
