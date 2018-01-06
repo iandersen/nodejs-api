@@ -58,7 +58,7 @@ class Player {
     loggedIn(){
         this.maxScore = 0;
         this.lastSubmittedScore = 0;
-        this.scoreUpdateTimer = setInterval(this.updateScore, 10000);
+        this.scoreUpdateTimer = setInterval(this.updateScore.bind(this), 10000);
         this.timeStamp = 0;
         request.post('https://htmlhigh5.com/play/popsicio/score/create',{json: {ip: this.address}},
             function(err,httpResponse,body){console.log(body)});
