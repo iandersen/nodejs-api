@@ -34,6 +34,7 @@ setInterval(main, 1000/30);
 setInterval(sync, 1000/10);
 setInterval(collisions, 1000/30);
 setInterval(secondary, 1000);
+setInterval(reSyncSplinters, 10000);
 
 function sync(){
     let microcosmPositions = [];
@@ -168,6 +169,10 @@ function createSplinter(){
             break;
         }
     }
+}
+
+function reSyncSplinters(){
+    io.emit('rS', game.splinters.map((s)=>{if(s) return new Renderable(s.x, s.y,s.radians,s.type,0,0)}));
 }
 
 io.on('connection', function(socket){
