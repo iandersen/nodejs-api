@@ -1,5 +1,6 @@
  var path = require('path');
  var webpack = require('webpack');
+ var Uglify = require("uglifyjs-webpack-plugin");
 
  var clientConfig = {
      target: 'web', // <=== can be omitted as default is 'web'
@@ -26,7 +27,10 @@
      stats: {
          colors: true
      },
-     devtool: 'source-map'
+     devtool: 'source-map',
+     plugins: [
+         new Uglify()
+     ]
  };
 
  module.exports = [clientConfig ];
