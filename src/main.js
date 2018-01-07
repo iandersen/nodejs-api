@@ -20,6 +20,11 @@ const game = new Game();
 const MIN_PLAYERS = 50;
 let lastPacket = present();
 
+app.use(function(req, res, next) {
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+    return next();
+});
+
 app.get('/', function(req, res){
     res.sendFile(path.resolve('./views/index.html'));
 });
@@ -27,6 +32,7 @@ app.get('/', function(req, res){
 app.use('/img', express.static(path.join(__dirname, '../img')));
 
 app.get('/client', function(req, res){
+    res.setHeader('Cache-Control', 'public, max-age=86400');
     res.sendFile(path.resolve('./build/client.bundle.js'));
 });
 
