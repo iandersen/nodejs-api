@@ -2,10 +2,10 @@
  * Created by Ian on 12/19/2017.
  */
 // const Storage = require('../storage/storage');
-const Stick = require('./stick');
-const Room = require('./room');
+const Stick = require('./Stick');
+const Room = require('./Room');
 const Renderable = require('../../rendering/Renderable');
-const Point = require('../util/point');
+const Point = require('../util/Point');
 
 const speed = 14;
 const rotationSpeed = Math.PI / 25;

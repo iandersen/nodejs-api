@@ -6,12 +6,12 @@ const basicauth = require('basicauth-middleware');
 const path = require('path');
 const present = require('present');
 
-const Room = require('./model/room');
-const Player = require('./model/player');
-const Splinter = require('./model/splinter');
+const Room = require('./model/Room');
+const Player = require('./model/Player');
+const Splinter = require('./model/Splinter');
 const Renderable = require('../rendering/Renderable');
 const TextRenderable = require('../rendering/TextRenderable');
-const Game = require('./gameState');
+const Game = require('./GameState');
 const names = require('./names.json');
 
 
@@ -206,7 +206,7 @@ io.on('connection', function(socket){
 
 function logIn(socket){
     const name = socket.handshake.query.name.substr(0,16);
-    const address = socket.handshake.address;
+    const address = socket.handshake.ipAddress;
     const player = new Player(name, address, socket);
     game.players.push(player);
     player.loggedIn();

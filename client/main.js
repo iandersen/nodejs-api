@@ -2,7 +2,7 @@
 // let io = ioClient('http://localhost:8080');
 import $ from 'jquery';
 require('../sass/main.scss');
-const Microcosm = require('../src/model/microcosm');
+const Microcosm = require('../src/model/Microcosm');
 const ClientMicrocosm = require('./Microcosm');
 let images = {};
 
@@ -47,10 +47,7 @@ $( "body" ).keypress(function( event ) {
 });
 
 function balanceBuffer(){
-    // console.log('Interpolations: ', interpolations);
-    // console.log('Extrapolations: ', extrapolations);
     const percentage = extrapolations/(interpolations+extrapolations);
-    // console.log('Percentage: ', percentage);
     if(percentage < .10) {
         if (BUFFER_SIZE > 3)
             BUFFER_SIZE--;
@@ -60,7 +57,7 @@ function balanceBuffer(){
     }
     interpolations = 0;
     extrapolations = 0;
-    console.log('New buffer size: ', BUFFER_SIZE);
+    console.log('Client Buffer Size: ', BUFFER_SIZE);
 }
 
 function start(){
@@ -89,7 +86,7 @@ function start(){
         scoreBoard = scores;
     });
     socket.on('sL', ()=>{
-        setTimeout(()=>{forceResize = true; console.log('SHRUNK')}, 500);
+        setTimeout(()=>{forceResize = true}, 500);
     });
     socket.on('rS', (s)=>{
         statics = s;
@@ -131,7 +128,7 @@ function start(){
         socketSpeed = performance.now() - lastSocketTime;
         lastSocketTime = performance.now();
         bounds = info.p.b;
-        main();
+        onInfoPacketReceived();
     });
     socket.on('dead', (s)=>{
         $('#gameTitle').show();
@@ -145,7 +142,7 @@ function start(){
     });
     $('#gameTitle').hide();
     $('#startBox').hide();
-    timer2 = window.setInterval(checkPercentage, 10000);
+    timer2 = window.setInterval(displayDrawTiming, 10000);
     renderTimer = window.setInterval(renderScreen, renderSpeed);
     interpolationTimer = window.setInterval(balanceBuffer, 3000);
 }
@@ -163,89 +160,86 @@ function renderScreen(){
         let nextFrame = buffer[1];
         if(timeSinceLastFrame > nextFrame.time) {
             timeSinceLastFrame %= nextFrame.time;
-            //console.log('New time: ', timeSinceLastFrame);
             buffer = buffer.slice(1, buffer.length);
-            // console.log('Length after slice: ', buffer.length);
         }
     }
-    if(buffer.length > 1){//Interpolate
-        renderDiff = performance.now() - lastSocketTime;
-        if(lastRenderTime !== -1)
-            renderSpeed = performance.now() - lastRenderTime;
-        timeSinceLastFrame += renderSpeed;
-        lastRenderTime = performance.now();
-        let frame = buffer[0];
-        let nextFrame = buffer[1];
-        if(frame.microcosms.length > 0){
-            frame.microcosms.forEach((m, i)=>{
-                if(m) {
-                    microcosms[i] = m;
-                }
-            });
-        }
-        let percentage = timeSinceLastFrame / nextFrame.time;
-        if(percentage > 1 && buffer.length > 2){
-            timeSinceLastFrame %= buffer[1].time;
-            buffer = buffer.slice(1,buffer.length);
-            frame = buffer[0];
-            nextFrame = buffer[1];
-            percentage = timeSinceLastFrame / nextFrame.time
-        }
-        if(percentage > 1)
-            extrapolations++;
-        else
-            interpolations++;
-        const d = frame.microcosmPositions;
-        const nd = nextFrame.microcosmPositions;
-        for(let n = 0; n < d.length; n++){
-            let r = d[n];
-            let nr = nd[n];
-            if(r && nr){
-                let myDirection = r.d;
-                let nextDirection = nr.d;
-                let diff = nextDirection - myDirection;
-                if(diff > Math.PI)
-                    diff = 2 * Math.PI - diff;
-                if(diff < -Math.PI)
-                    diff = 2 * Math.PI + diff;
-                const newDirection = diff * percentage + myDirection;
-                const dX = nr.x - r.x;
-                const newX = r.x + percentage * dX;
-                const dY = nr.y - r.y;
-                const newY = r.y + percentage * dY;
-                const storedMicrocosm = microcosms[n];
-                if(storedMicrocosm)
-                    renderMicrocosms[n] = {x: newX, y: newY, type: storedMicrocosm.type, direction: newDirection, microcosm: storedMicrocosm};
-            }
-        }
-        const pos = frame.pos;
-        const nPos = nextFrame.pos;
-        const dX = nPos.x - pos.x;
-        const dY = nPos.y - pos.y;
-        x = pos.x;
-        y = pos.y;
-        x += percentage * dX;
-        y += percentage * dY;
-    }else if(buffer.size > 0){//Extrapolating
-        console.log('Buffer not full!');
-    }else{
-        console.log('buffer empty!');
-    }
+    if(buffer.length > 1)
+        updateMicrocosmPositions();
     draw();
 }
 
-function main(){
+function updateMicrocosmPositions(){
+    renderDiff = performance.now() - lastSocketTime;
+    if(lastRenderTime !== -1)
+        renderSpeed = performance.now() - lastRenderTime;
+    timeSinceLastFrame += renderSpeed;
+    lastRenderTime = performance.now();
+    let frame = buffer[0];
+    let nextFrame = buffer[1];
+    if(frame.microcosms.length > 0){
+        frame.microcosms.forEach((m, i)=>{
+            if(m) {
+                microcosms[i] = m;
+            }
+        });
+    }
+    let percentage = timeSinceLastFrame / nextFrame.time;
+    if(percentage > 1 && buffer.length > 2){
+        timeSinceLastFrame %= buffer[1].time;
+        buffer = buffer.slice(1,buffer.length);
+        frame = buffer[0];
+        nextFrame = buffer[1];
+        percentage = timeSinceLastFrame / nextFrame.time
+    }
+    if(percentage > 1)
+        extrapolations++;
+    else
+        interpolations++;
+    const currentPositions = frame.microcosmPositions;
+    const futurePositions = nextFrame.microcosmPositions;
+    for(let n = 0; n < currentPositions.length; n++){
+        let currentPosition = currentPositions[n];
+        let futurePosition = futurePositions[n];
+        if(currentPosition && futurePosition){
+            let myDirection = currentPosition.d;
+            let nextDirection = futurePosition.d;
+            let deltaDirection = nextDirection - myDirection;
+            if(deltaDirection > Math.PI)
+                deltaDirection = 2 * Math.PI - deltaDirection;
+            if(deltaDirection < -Math.PI)
+                deltaDirection = 2 * Math.PI + deltaDirection;
+            const newDirection = deltaDirection * percentage + myDirection;
+            const deltaX = futurePosition.x - currentPosition.x;
+            const newX = currentPosition.x + percentage * deltaX;
+            const deltaY = futurePosition.y - currentPosition.y;
+            const newY = currentPosition.y + percentage * deltaY;
+            const storedMicrocosm = microcosms[n];
+            if(storedMicrocosm)
+                renderMicrocosms[n] = {x: newX, y: newY, type: storedMicrocosm.type, direction: newDirection, microcosm: storedMicrocosm};
+        }
+    }
+    const pos = frame.pos;
+    const nPos = nextFrame.pos;
+    const dX = nPos.x - pos.x;
+    const dY = nPos.y - pos.y;
+    x = pos.x;
+    y = pos.y;
+    x += percentage * dX;
+    y += percentage * dY;
+}
+
+function onInfoPacketReceived(){
     if(mouseX !== lastMouseX || mouseY !== lastMouseY){
         lastMouseX = mouseX;
         lastMouseY = mouseY;
-        const w = $(window).width();
-        const h = $(window).height();
-        socket.emit('m', {x: mouseX, y: mouseY, w: w, h: h});
+        const width = $(window).width();
+        const height = $(window).height();
+        socket.emit('m', {x: mouseX, y: mouseY, w: width, h: height});
     }
     socket.emit('r', {x: Math.round(x - canvas.width / 2), y: Math.round(y - canvas.height / 2), w: canvas.width, h: canvas.height});
 }
 
-function checkPercentage(){
+function displayDrawTiming(){
     console.log('Time: ', time/attempts);
     console.log('attempts: ', attempts);
     attempts = 0;
@@ -256,42 +250,31 @@ $( "html" ).mousemove(function( event ) {
     mouseX = event.pageX;
     mouseY = event.pageY;
 });
-const offscreenCanvas = document.createElement('canvas');
-const offscreenCtx = offscreenCanvas.getContext('2d');
+
+const offScreenCanvas = document.createElement('canvas');
+const offScreenContext = offScreenCanvas.getContext('2d');
 function rotateAndCache(image, angle, w, h, key) {
     let size = Math.max(w, h);
-    offscreenCanvas.width = size;
-    offscreenCanvas.height = size;
-    offscreenCtx.translate(size/2, size/2);
-    offscreenCtx.rotate(angle);
-    offscreenCtx.drawImage(image, -w/2, -h/2, w, h);
-    return offscreenCanvas;
+    offScreenCanvas.width = size;
+    offScreenCanvas.height = size;
+    offScreenContext.translate(size/2, size/2);
+    offScreenContext.rotate(angle);
+    offScreenContext.drawImage(image, -w/2, -h/2, w, h);
+    return offScreenCanvas;
 }
 
-function drawRotated(x, y, image, radians, w, h, key){
-    const rotatedImage = rotateAndCache(image, radians, w, h, key);
+function drawRotated(x, y, image, radians, width, height, key){
+    const rotatedImage = rotateAndCache(image, radians, width, height, key);
     context.drawImage(rotatedImage, x, y);
 }
-window.onresize = (e)=>{forceResize = true;};
+
+window.onresize = (e)=>{forceResize = true};
+
 let gridBKG;
+
 function draw(){
     let t0 = performance.now();
-    if(bounds) {
-        let maxDiff = Math.round(Math.sqrt(2) * Math.sqrt(Math.pow(bounds.max.x - bounds.min.x, 2) + Math.pow(bounds.max.y - bounds.min.y, 2)));
-        if (maxDiff > renderSize + 10 || forceResize) {
-            const ratio = window.innerHeight / window.innerWidth;
-            maxDiff += 10;
-            renderSize = maxDiff;
-            forceResize = false;
-            if (ratio <= 1) {
-                canvas.width = Math.max(maxDiff / ratio + 100, window.innerWidth);
-                canvas.height = Math.max(canvas.width * ratio, window.innerHeight);
-            } else {
-                canvas.height = Math.max(maxDiff + 100, window.innerHeight);
-                canvas.width = Math.max(canvas.height * ratio, window.innerWidth);
-            }
-        }
-    }
+    resizeCanvas();
     drawBKG(context);
     dynamics = [];
     if(renderMicrocosms)
@@ -316,12 +299,31 @@ function draw(){
         });
     if(textElements){
         textElements.forEach((t)=>{
-            renderText(t);
+            drawPlayerText(t);
         });
     }
     let t1 = performance.now();
-    attempts ++;
+    attempts++;
     time += t1 - t0;
+}
+
+function resizeCanvas(){
+    if(bounds) {
+        let maxDiff = Math.round(Math.sqrt(2) * Math.sqrt(Math.pow(bounds.max.x - bounds.min.x, 2) + Math.pow(bounds.max.y - bounds.min.y, 2)));
+        if (maxDiff > renderSize + 10 || forceResize) {
+            const ratio = window.innerHeight / window.innerWidth;
+            maxDiff += 10;
+            renderSize = maxDiff;
+            forceResize = false;
+            if (ratio <= 1) {
+                canvas.width = Math.max(maxDiff / ratio + 100, window.innerWidth);
+                canvas.height = Math.max(canvas.width * ratio, window.innerHeight);
+            } else {
+                canvas.height = Math.max(maxDiff + 100, window.innerHeight);
+                canvas.width = Math.max(canvas.height * ratio, window.innerWidth);
+            }
+        }
+    }
 }
 
 function renderObject(r){
@@ -344,7 +346,7 @@ function renderMicrocosm(x, y, direction, type, microcosm){
 }
 
 function drawMicrocosmText(x,y,microcosm){
-    renderText({x: x, y: y, z: microcosm.numSticks * 5 + 30, t: microcosm.name});
+    drawPlayerText({x: x, y: y, size: microcosm.numSticks * 5 + 30, text: microcosm.name});
 }
 
 function drawBKG(context){
@@ -362,6 +364,10 @@ function drawBKG(context){
 function drawGUI(){
     guiCanvas.width = window.innerWidth;
     guiCanvas.height = window.innerHeight;
+    drawScoreboard();
+}
+
+function drawScoreboard(){
     const w = guiCanvas.width;
     guiContext.fillStyle = 'rgba(0,0,0,.5)';
     const boxHeight = 400;
@@ -383,17 +389,17 @@ function drawGUI(){
         });
 }
 
-function renderText(textElement){
-    let xx = Math.round(textElement.x - x + canvas.width / 2);
-    let yy = Math.round(textElement.y - y + canvas.height / 2);
-    if(xx >= -200 && xx <= canvas.width + 200 && yy >= -200 && yy <= canvas.height + 200) {
+function drawPlayerText(textElement){
+    let textX = Math.round(textElement.x - x + canvas.width / 2);
+    let textY = Math.round(textElement.y - y + canvas.height / 2);
+    if(textX >= -200 && textX <= canvas.width + 200 && textY >= -200 && textY <= canvas.height + 200) {
         context.fillStyle = 'white';
         context.textAlign = 'center';
         context.textBaseline="middle";
-        context.font = `bold ${textElement.z}px Work Sans`;
-        context.fillText(textElement.t, xx, yy);
+        context.font = `bold ${textElement.size}px Work Sans`;
+        context.fillText(textElement.text, textX, textY);
         context.fillStyle = 'black';
-        context.lineWidth = Math.floor(Math.sqrt(textElement.z) - 4);
-        context.strokeText(textElement.t, xx, yy)
+        context.lineWidth = Math.floor(Math.sqrt(textElement.size) - 4);
+        context.strokeText(textElement.text, textX, textY)
     }
 }

@@ -2,10 +2,10 @@
  * Created by Ian on 12/19/2017.
  */
 
-const Line = require('../util/line');
-const Point = require('../util/point');
-const ColBox = require('../util/colBox');
-const Game = require('../gameState');
+const Line = require('../util/Line');
+const Point = require('../util/Point');
+const ColBox = require('../util/CollisionBox');
+const Game = require('../GameState');
 const game = new Game();
 let id = 0;
 

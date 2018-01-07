@@ -3,9 +3,9 @@
  */
 
 // const Storage = require('../storage/storage');
-const Line = require('../util/line');
-const Point = require('../util/point');
-const ColBox = require('../util/colBox');
+const Line = require('../util/Line');
+const Point = require('../util/Point');
+const ColBox = require('../util/CollisionBox');
 
 class Splinter {
     constructor(x, y, type){

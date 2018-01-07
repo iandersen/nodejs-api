@@ -2,9 +2,9 @@
  * Created by Ian on 12/19/2017.
  */
 
-const Microcosm = require('./microcosm');
-const Room = require('./room');
-const Game = require('../gameState');
+const Microcosm = require('./Microcosm');
+const Room = require('./Room');
+const Game = require('../GameState');
 const game = new Game();
 const md5 = require('md5');
 const request = require('request');
@@ -18,7 +18,7 @@ const increment = 10;
 class Player {
     constructor(name, address, socket){
         this.name = name;
-        this.address = address;
+        this.ipAddress = address;
         let x = Room.randomX();
         let y = Room.randomY();
         let i = 0;
@@ -47,37 +47,32 @@ class Player {
         if(id > 9999)
             id = 0;
         this.socket = socket;
-        this.sticksLeft = splinterCount;
-        this.automated = !this.socket;
+        this.splintersUntilStickAdded = splinterCount;
         this.bounds = {x: 0, y: 0, width: Room.getWidth(), height: Room.getHeight()};
         this.timeStamp = 0;
         this.maxScore = 0;
-        this.lastSubmittedScore = 0;
     }
 
     loggedIn(){
         this.maxScore = 0;
-        this.lastSubmittedScore = 0;
         this.scoreUpdateTimer = setInterval(this.updateScore.bind(this), 10000);
         this.timeStamp = 0;
-        request.post('https://htmlhigh5.com/play/popsicio/score/create',{json: {ip: this.address}},
-            function(err,httpResponse,body){console.log(body)});
+        request.post('https://htmlhigh5.com/play/popsicio/score/create',{json: {ip: this.ipAddress}},
+            function(err,httpResponse,body){});
     }
 
     updateScore(){
-        const increment = 0;//Math.max(this.maxScore - this.lastSubmittedScore, 0);
-        //if(increment > 0)
-        //    this.lastSubmittedScore = this.maxScore;
+        const increment = 0;
         this.timeStamp += Math.ceil(Math.random() * 5);
-        request.post('https://htmlhigh5.com/play/popsicio/score/update',{json: {timestamp: this.timeStamp, score: increment, ip: this.address, hash: Player.hashScore(increment, this.timeStamp)}},
-            function(err,httpResponse,body){console.log(body)});
+        request.post('https://htmlhigh5.com/play/popsicio/score/update',{json: {timestamp: this.timeStamp, score: increment, ip: this.ipAddress, hash: Player.hashScore(increment, this.timeStamp)}},
+            function(err,httpResponse,body){});
     }
 
     static hashScore(value, salt){
-        let val = md5(value + md5(salt + md5(value + md5(salt))));
+        let hashedValue = md5(value + md5(salt + md5(value + md5(salt))));
         for(let i = 0; i < 37; i++)
-            val = md5(salt + val);
-        return val;
+            hashedValue = md5(salt + hashedValue);
+        return hashedValue;
     }
 
     static BUILD_STATE(){
@@ -102,11 +97,11 @@ class Player {
         this.splinters++;
         if(this.splinters > this.maxScore)
             this.maxScore = this.splinters;
-        this.sticksLeft--;
+        this.splintersUntilStickAdded--;
         if(this.microcosm){
-            if(this.sticksLeft === 0){
+            if(this.splintersUntilStickAdded === 0){
                 this.microcosm.addStickToFirstAvailable();
-                this.sticksLeft = splinterCount + increment * this.microcosm.numSticks;
+                this.splintersUntilStickAdded = splinterCount + increment * this.microcosm.numSticks;
             }
         }
     }
@@ -118,11 +113,10 @@ class Player {
 
     loggedOut(){
         clearInterval(this.scoreUpdateTimer);
-        const increment = this.maxScore;//Math.max(this.maxScore - this.lastSubmittedScore, 0);
+        const increment = this.maxScore;
         const timestamp = 9999999;
-        console.log('Final score: ', increment);
-        request.post('https://htmlhigh5.com/play/popsicio/score/store',{json: {timestamp: timestamp, increment: increment, hash: Player.hashScore(increment, timestamp), ip: this.address}},
-            function(err,httpResponse,body){console.log(body)});
+        request.post('https://htmlhigh5.com/play/popsicio/score/store',{json: {timestamp: timestamp, increment: increment, hash: Player.hashScore(increment, timestamp), ip: this.ipAddress}},
+            function(err,httpResponse,body){});
     }
 
     destroy(){
