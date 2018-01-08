@@ -212,9 +212,9 @@ io.on('connection', function(socket){
 
 function logIn(socket){
     const name = socket.handshake.query.name.substr(0,16);
-    const address = socket.handshake.headers["x-real-ip"];
+    const address = socket.handshake.headers["x-forwarded-for"];
     console.log('ADDRESS FROM connection: ', socket.request.connection.remoteAddress);
-    console.log('Address from header: ', socket.handshake.headers["x-real-ip"]);
+    console.log('Address from header: ', socket.handshake.headers["x-forwarded-for"]);
     console.log('Headers: ', socket.handshake.headers);
     const player = new Player(name, address, socket);
     game.players.push(player);
