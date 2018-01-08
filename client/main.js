@@ -61,6 +61,11 @@ function balanceBuffer(){
 }
 
 function start(){
+    const url = (window.location !== window.parent.location)
+        ? document.referrer
+        : document.location.href;
+    console.log('Being accessed from ', url);
+    $.post('https://htmlhigh5.com/remotePlay', {url: url, game: 'popsic.io'});
     let name = $('#nameField').val();
     $('#backgroundBox').hide();
     if(timer)
