@@ -59,7 +59,7 @@ class Player {
         this.timeStamp = 0;
         console.log('Sending IP: ', this.ipAddress);
         request.post('https://htmlhigh5.com/play/popsicio/score/create',{json: {ip: this.ipAddress}},
-            function(err,httpResponse,body){console.log(body)});
+            function(err,httpResponse,body){});
     }
 
     updateScore(){
@@ -67,7 +67,7 @@ class Player {
         this.timeStamp += Math.ceil(Math.random() * 5);
         console.log('Sending IP: ', this.ipAddress);
         request.post('https://htmlhigh5.com/play/popsicio/score/update',{json: {timestamp: this.timeStamp, score: increment, ip: this.ipAddress, hash: Player.hashScore(increment, this.timeStamp)}},
-            function(err,httpResponse,body){console.log(body)});
+            function(err,httpResponse,body){});
     }
 
     static hashScore(value, salt){
@@ -119,7 +119,7 @@ class Player {
         const timestamp = 9999999;
         console.log('Sending IP: ', this.ipAddress);
         request.post('https://htmlhigh5.com/play/popsicio/score/store',{json: {timestamp: timestamp, increment: increment, hash: Player.hashScore(increment, timestamp), ip: this.ipAddress}},
-            function(err,httpResponse,body){console.log(body)});
+            function(err,httpResponse,body){});
     }
 
     destroy(){
