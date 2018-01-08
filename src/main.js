@@ -212,7 +212,7 @@ io.on('connection', function(socket){
 
 function logIn(socket){
     const name = socket.handshake.query.name.substr(0,16);
-    const address = socket.handshake.ipAddress;
+    const address = socket.handshake.address;
     const player = new Player(name, address, socket);
     game.players.push(player);
     player.loggedIn();
