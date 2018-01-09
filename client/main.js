@@ -117,7 +117,7 @@ function start(){
         if(r.m){
             r.m.forEach((m)=>{
                 const id = m.i;
-                bufferMicrocosms[id] = ClientMicrocosm.deserialize(m);
+                microcosms[id] = ClientMicrocosm.deserialize(m);
             });
         }
         //Microcosm positions
@@ -127,7 +127,7 @@ function start(){
                 bufferMicrocosmPositions[id] = m;
             });
         }
-        buffer.push({time: info.t, microcosms: bufferMicrocosms, pos: info.p, microcosmPositions: bufferMicrocosmPositions, id: bufferFrameID++});
+        buffer.push({time: info.t, pos: info.p, microcosmPositions: bufferMicrocosmPositions, id: bufferFrameID++});
         if(buffer.length > BUFFER_SIZE)
             buffer = buffer.slice(-BUFFER_SIZE);
         socketSpeed = performance.now() - lastSocketTime;
@@ -181,13 +181,6 @@ function updateMicrocosmPositions(){
     lastRenderTime = performance.now();
     let frame = buffer[0];
     let nextFrame = buffer[1];
-    if(frame.microcosms.length > 0){
-        frame.microcosms.forEach((m, i)=>{
-            if(m) {
-                microcosms[i] = m;
-            }
-        });
-    }
     let percentage = timeSinceLastFrame / nextFrame.time;
     if(percentage > 1 && buffer.length > 2){
         timeSinceLastFrame %= buffer[1].time;

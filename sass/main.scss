@@ -50,7 +50,7 @@ html{
   font-size: 80px;
   max-width: 65%;
   max-height: 35%;
-  margin-top: 150px;
+  margin-top: 25px;
 }
 
 #startBox{
@@ -95,4 +95,17 @@ label{
   font-size: 32px;
   font-weight: bold;
   font-family: 'Work Sans', Georgia, Serif;
+}
+
+h3{
+  font-size: 40px;
+  color: white;
+  font-weight: bold;
+  font-family: 'Work Sans', Georgia, Serif;
+  background: red;
+}
+
+.extLink{
+  text-decoration: none;
+  color: white;
 }
