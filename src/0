@@ -1,0 +1,3 @@
+Listening on port 8080
+Error: ENOENT: no such file or directory, stat '/var/www/popsic.io/public_html/src/views/index.html'
+Error: ENOENT: no such file or directory, stat '/var/www/popsic.io/public_html/src/build/client.bundle.js'

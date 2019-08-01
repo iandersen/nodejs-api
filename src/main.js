@@ -15,9 +15,9 @@ const Game = require('./GameState');
 const names = require('./names.json');
 
 
-const SPLINTER_LIMIT = 500;
+const SPLINTER_LIMIT = 300;
 const game = new Game();
-const MIN_PLAYERS = 50;
+const MIN_PLAYERS = 15;
 let lastPacket = present();
 
 app.use(function(req, res, next) {
@@ -244,6 +244,7 @@ function logOut(socket){
     player.loggedOut();
     game.players.splice(id, 1);
 }
-const server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
-const server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
-http.listen(server_port, () => console.log('Listening on port 8080'));
+const server_port = 8080;//process.env.OPENSHIFT_NODEJS_PORT || 8080;
+const server_ip_address = '127.0.0.1';//process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+//http.listen(server_port, server_ip_address), 511, () => console.log('Listening on port 8080'));
+http.listen(8080,'127.0.0.1');
